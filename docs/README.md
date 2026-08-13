@@ -17,6 +17,7 @@
 - 查询订单
 - 标记成功
 - 标记失败
+- MySQL 5.7 + GORM 持久化订单
 
 ## 目录结构
 
@@ -31,7 +32,8 @@ paymentCenter/
 │  ├─ domain/
 │  │  └─ order.go
 │  ├─ store/
-│  │  └─ memory.go
+│  │  ├─ errors.go
+│  │  └─ mysql.go
 │  ├─ service/
 │  │  └─ service.go
 │  └─ transport/
@@ -39,9 +41,31 @@ paymentCenter/
 │        └─ router.go
 ├─ docs/
 │  └─ README.md
+├─ db/
+│  └─ schema.sql
 ├─ go.mod
 └─ go.sum
 ```
+
+## 数据库
+
+当前项目已经切到 MySQL + GORM 存储，不再使用内存版保存订单。
+
+先创建数据库和表：
+
+```bash
+mysql -uroot -p < db/schema.sql
+```
+
+默认连接配置：
+
+```text
+DB_DSN=root:root@tcp(127.0.0.1:3306)/payment_center?charset=utf8mb4&parseTime=true&loc=Local
+```
+
+如果你的 MySQL 密码不是 `root`，修改项目根目录的 `.env` 里的 `DB_DSN`。
+
+项目启动时会执行 GORM `AutoMigrate`，用于自动校验和补齐 `payment_orders` 表结构。`db/schema.sql` 仍然保留，方便你手动初始化数据库。
 
 ## 启动方式
 
@@ -68,6 +92,7 @@ set PAYMENT_CENTER_ADDR=:8081
 - `APP_ENV`
 - `PAYMENT_CENTER_NAME`
 - `PAYMENT_CENTER_ADDR`
+- `DB_DSN`
 - `STRIPE_API_KEY`
 - `STRIPE_WEBHOOK_SECRET`
 
@@ -118,8 +143,8 @@ set PAYMENT_CENTER_ADDR=:8081
 
 ## 下一步建议
 
-1. 加数据库层
-2. 加商户表和密钥
-3. 加通道路由表
-4. 加 A站回调签名
-5. 接 OpenCart `win_stripe` 或 `win`
+1. 加商户表和密钥
+2. 加通道路由表
+3. 加 A站回调签名
+4. 接 OpenCart `win_stripe` 回调上报
+5. 再接 OpenCart `win` + B站壳包

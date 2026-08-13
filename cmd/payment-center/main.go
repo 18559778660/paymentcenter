@@ -20,7 +20,13 @@ func main() {
 	_ = godotenv.Load()
 
 	cfg := config.Load()
-	app := service.NewApp(store.NewMemoryStore())
+	st, err := store.NewMySQLStore(cfg.DBDSN)
+	if err != nil {
+		log.Fatalf("connect mysql failed: %v", err)
+	}
+	defer st.Close()
+
+	app := service.NewApp(st)
 
 	router := httptransport.NewRouter(cfg, app)
 

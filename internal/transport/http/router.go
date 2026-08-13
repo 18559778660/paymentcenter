@@ -31,11 +31,21 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 				response.Fail(c, err.Error())
 				return
 			}
-			response.SuccessMsg(c, app.CreateOrder(req), "created")
+			res, err := app.CreateOrder(req)
+			if err != nil {
+				response.Fail(c, err.Error())
+				return
+			}
+			response.SuccessMsg(c, res, "created")
 		})
 		// 获取订单列表
 		api.GET("/orders", func(c *gin.Context) {
-			response.Success(c, gin.H{"items": app.ListOrders()})
+			orders, err := app.ListOrders()
+			if err != nil {
+				response.Fail(c, err.Error())
+				return
+			}
+			response.Success(c, gin.H{"items": orders})
 		})
 		// 获取订单
 		api.GET("/orders/:id", func(c *gin.Context) {

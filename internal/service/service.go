@@ -6,14 +6,19 @@ import (
 	"time"
 
 	"paymentcenter/internal/domain"
-	"paymentcenter/internal/store"
 )
 
-type App struct {
-	store *store.MemoryStore
+type OrderStore interface {
+	Save(order *domain.Order) error
+	Get(id string) (*domain.Order, error)
+	List() ([]*domain.Order, error)
 }
 
-func NewApp(st *store.MemoryStore) *App {
+type App struct {
+	store OrderStore
+}
+
+func NewApp(st OrderStore) *App {
 	return &App{store: st}
 }
 
@@ -32,7 +37,7 @@ type CreateOrderResponse struct {
 	CheckoutURL string `json:"checkout_url"`
 }
 
-func (a *App) CreateOrder(req CreateOrderRequest) CreateOrderResponse {
+func (a *App) CreateOrder(req CreateOrderRequest) (CreateOrderResponse, error) {
 	now := time.Now().UTC()
 	id := "pc_" + strconv.FormatInt(now.UnixNano(), 10)
 	order := &domain.Order{
@@ -50,19 +55,21 @@ func (a *App) CreateOrder(req CreateOrderRequest) CreateOrderResponse {
 		UpdatedAt:     now,
 	}
 	order.CheckoutURL = fmt.Sprintf("/mock/checkout/%s", order.ID)
-	a.store.Save(order)
+	if err := a.store.Save(order); err != nil {
+		return CreateOrderResponse{}, err
+	}
 	return CreateOrderResponse{
 		OrderID:     order.ID,
 		Status:      string(order.Status),
 		CheckoutURL: order.CheckoutURL,
-	}
+	}, nil
 }
 
 func (a *App) GetOrder(id string) (*domain.Order, error) {
 	return a.store.Get(id)
 }
 
-func (a *App) ListOrders() []*domain.Order {
+func (a *App) ListOrders() ([]*domain.Order, error) {
 	return a.store.List()
 }
 
@@ -74,7 +81,9 @@ func (a *App) MarkPaid(id, providerRef string) (*domain.Order, error) {
 	order.Status = domain.OrderStatusPaid
 	order.ProviderRef = providerRef
 	order.UpdatedAt = time.Now().UTC()
-	a.store.Save(order)
+	if err := a.store.Save(order); err != nil {
+		return nil, err
+	}
 	return order, nil
 }
 
@@ -86,6 +95,8 @@ func (a *App) MarkFailed(id, message string) (*domain.Order, error) {
 	order.Status = domain.OrderStatusFailed
 	order.ErrorMessage = message
 	order.UpdatedAt = time.Now().UTC()
-	a.store.Save(order)
+	if err := a.store.Save(order); err != nil {
+		return nil, err
+	}
 	return order, nil
 }
