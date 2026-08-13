@@ -37,11 +37,12 @@ type CreateOrderResponse struct {
 	CheckoutURL string `json:"checkout_url"`
 }
 
+// 创建订单
 func (a *App) CreateOrder(req CreateOrderRequest) (CreateOrderResponse, error) {
 	now := time.Now().UTC()
 	id := "pc_" + strconv.FormatInt(now.UnixNano(), 10)
 	order := &domain.Order{
-		ID:           id,
+		ID:            id,
 		MerchantOrder: req.MerchantOrder,
 		MerchantSite:  req.MerchantSite,
 		Channel:       "win_stripe",
@@ -65,14 +66,17 @@ func (a *App) CreateOrder(req CreateOrderRequest) (CreateOrderResponse, error) {
 	}, nil
 }
 
+// 获取订单
 func (a *App) GetOrder(id string) (*domain.Order, error) {
 	return a.store.Get(id)
 }
 
+// 获取订单列表
 func (a *App) ListOrders() ([]*domain.Order, error) {
 	return a.store.List()
 }
 
+// 标记订单已支付
 func (a *App) MarkPaid(id, providerRef string) (*domain.Order, error) {
 	order, err := a.store.Get(id)
 	if err != nil {
@@ -87,6 +91,7 @@ func (a *App) MarkPaid(id, providerRef string) (*domain.Order, error) {
 	return order, nil
 }
 
+// 标记订单已失败
 func (a *App) MarkFailed(id, message string) (*domain.Order, error) {
 	order, err := a.store.Get(id)
 	if err != nil {

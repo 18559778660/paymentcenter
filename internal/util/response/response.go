@@ -17,6 +17,7 @@ type Body struct {
 	Msg  string      `json:"msg"`
 }
 
+// 成功响应
 func Success(c *gin.Context, data interface{}) {
 	c.JSON(http.StatusOK, Body{
 		Code: CodeSuccess,
@@ -25,6 +26,7 @@ func Success(c *gin.Context, data interface{}) {
 	})
 }
 
+// 成功响应带消息
 func SuccessMsg(c *gin.Context, data interface{}, msg string) {
 	c.JSON(http.StatusOK, Body{
 		Code: CodeSuccess,
@@ -33,6 +35,7 @@ func SuccessMsg(c *gin.Context, data interface{}, msg string) {
 	})
 }
 
+// 失败响应
 func Fail(c *gin.Context, msg string) {
 	c.JSON(http.StatusOK, Body{
 		Code: CodeFail,
@@ -41,6 +44,7 @@ func Fail(c *gin.Context, msg string) {
 	})
 }
 
+// 失败响应带代码和数据
 func FailWithCode(c *gin.Context, code int, msg string, data interface{}) {
 	c.JSON(http.StatusOK, Body{
 		Code: code,

@@ -9,10 +9,12 @@ import (
 	"paymentcenter/internal/domain"
 )
 
+// MySQL 存储
 type MySQLStore struct {
 	db *gorm.DB
 }
 
+// 创建 MySQL 存储
 func NewMySQLStore(dsn string) (*MySQLStore, error) {
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
@@ -24,6 +26,7 @@ func NewMySQLStore(dsn string) (*MySQLStore, error) {
 	return &MySQLStore{db: db}, nil
 }
 
+// 关闭 MySQL 连接
 func (s *MySQLStore) Close() error {
 	sqlDB, err := s.db.DB()
 	if err != nil {
@@ -32,10 +35,12 @@ func (s *MySQLStore) Close() error {
 	return sqlDB.Close()
 }
 
+// 保存订单
 func (s *MySQLStore) Save(order *domain.Order) error {
 	return s.db.Save(order).Error
 }
 
+// 获取订单
 func (s *MySQLStore) Get(id string) (*domain.Order, error) {
 	var order domain.Order
 	if err := s.db.First(&order, "id = ?", id).Error; err != nil {
@@ -47,6 +52,7 @@ func (s *MySQLStore) Get(id string) (*domain.Order, error) {
 	return &order, nil
 }
 
+// 获取订单列表
 func (s *MySQLStore) List() ([]*domain.Order, error) {
 	var orders []*domain.Order
 	if err := s.db.Order("created_at DESC").Limit(100).Find(&orders).Error; err != nil {
