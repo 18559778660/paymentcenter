@@ -12,20 +12,21 @@ const (
 	OrderStatusCancelled OrderStatus = "cancelled"
 )
 
+// 订单实体
 type Order struct {
 	ID            string      `json:"id"`
-	MerchantOrder  string      `json:"merchant_order"`
-	MerchantSite   string      `json:"merchant_site"`
-	Channel        string      `json:"channel"`
-	Provider       string      `json:"provider"`
-	Amount         int64       `json:"amount"`
-	Currency       string      `json:"currency"`
-	ReturnURL      string      `json:"return_url"`
-	NotifyURL      string      `json:"notify_url"`
-	CheckoutURL    string      `json:"checkout_url,omitempty"`
-	ProviderRef    string      `json:"provider_ref,omitempty"`
-	Status         OrderStatus `json:"status"`
-	ErrorMessage   string      `json:"error_message,omitempty"`
-	CreatedAt      time.Time   `json:"created_at"`
-	UpdatedAt      time.Time   `json:"updated_at"`
+	MerchantOrder string      `json:"merchant_order"`
+	MerchantSite  string      `json:"merchant_site"`
+	Channel       string      `json:"channel"`
+	Provider      string      `json:"provider"`
+	Amount        int64       `json:"amount"`
+	Currency      string      `json:"currency"`
+	ReturnURL     string      `json:"return_url"`
+	NotifyURL     string      `json:"notify_url"`
+	CheckoutURL   string      `json:"checkout_url,omitempty"`
+	ProviderRef   string      `json:"provider_ref,omitempty"`
+	Status        OrderStatus `json:"status"`
+	ErrorMessage  string      `json:"error_message,omitempty"`
+	CreatedAt     time.Time   `json:"created_at"`
+	UpdatedAt     time.Time   `json:"updated_at"`
 }
