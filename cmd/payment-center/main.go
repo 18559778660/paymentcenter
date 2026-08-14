@@ -27,7 +27,10 @@ func main() {
 	}
 	defer st.Close()
 
-	app := service.NewApp(st)
+	app := service.NewApp(st, cfg.AuthSecret, cfg.TokenTTL)
+	if err := app.EnsureDefaultAdmin(cfg.AdminUsername, cfg.AdminPassword); err != nil {
+		log.Fatalf("seed admin user failed: %v", err)
+	}
 
 	router := httptransport.NewRouter(cfg, app)
 

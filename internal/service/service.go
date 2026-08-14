@@ -8,20 +8,28 @@ import (
 	"paymentcenter/internal/model"
 )
 
-type OrderStore interface {
-	Save(order *model.Order) error
-	Get(id string) (*model.Order, error)
-	List() ([]*model.Order, error)
+type Store interface {
+	SaveOrder(order *model.Order) error
+	GetOrder(id string) (*model.Order, error)
+	ListOrders() ([]*model.Order, error)
+	CreateUser(user *model.User) error
+	SaveUser(user *model.User) error
+	GetUserByID(id uint) (*model.User, error)
+	FindUserByUsername(username string) (*model.User, error)
 }
 
 type App struct {
-	store OrderStore
+	store      Store
+	authSecret string
+	tokenTTL   time.Duration
 }
 
-func NewApp(st OrderStore) *App {
-	return &App{store: st}
+// 创建应用
+func NewApp(st Store, authSecret string, tokenTTL time.Duration) *App {
+	return &App{store: st, authSecret: authSecret, tokenTTL: tokenTTL}
 }
 
+// 创建订单请求
 type CreateOrderRequest struct {
 	MerchantOrder string `json:"merchant_order" binding:"required"`
 	MerchantSite  string `json:"merchant_site" binding:"required"`
@@ -31,6 +39,7 @@ type CreateOrderRequest struct {
 	NotifyURL     string `json:"notify_url" binding:"required"`
 }
 
+// 创建订单响应
 type CreateOrderResponse struct {
 	OrderID     string `json:"order_id"`
 	Status      string `json:"status"`
@@ -56,7 +65,7 @@ func (a *App) CreateOrder(req CreateOrderRequest) (CreateOrderResponse, error) {
 		UpdatedAt:     now,
 	}
 	order.CheckoutURL = fmt.Sprintf("/mock/checkout/%s", order.ID)
-	if err := a.store.Save(order); err != nil {
+	if err := a.store.SaveOrder(order); err != nil {
 		return CreateOrderResponse{}, err
 	}
 	return CreateOrderResponse{
@@ -68,24 +77,24 @@ func (a *App) CreateOrder(req CreateOrderRequest) (CreateOrderResponse, error) {
 
 // 获取订单
 func (a *App) GetOrder(id string) (*model.Order, error) {
-	return a.store.Get(id)
+	return a.store.GetOrder(id)
 }
 
 // 获取订单列表
 func (a *App) ListOrders() ([]*model.Order, error) {
-	return a.store.List()
+	return a.store.ListOrders()
 }
 
 // 标记订单已支付
 func (a *App) MarkPaid(id, providerRef string) (*model.Order, error) {
-	order, err := a.store.Get(id)
+	order, err := a.store.GetOrder(id)
 	if err != nil {
 		return nil, err
 	}
 	order.Status = model.OrderStatusPaid
 	order.ProviderRef = providerRef
 	order.UpdatedAt = time.Now().UTC()
-	if err := a.store.Save(order); err != nil {
+	if err := a.store.SaveOrder(order); err != nil {
 		return nil, err
 	}
 	return order, nil
@@ -93,14 +102,14 @@ func (a *App) MarkPaid(id, providerRef string) (*model.Order, error) {
 
 // 标记订单已失败
 func (a *App) MarkFailed(id, message string) (*model.Order, error) {
-	order, err := a.store.Get(id)
+	order, err := a.store.GetOrder(id)
 	if err != nil {
 		return nil, err
 	}
 	order.Status = model.OrderStatusFailed
 	order.ErrorMessage = message
 	order.UpdatedAt = time.Now().UTC()
-	if err := a.store.Save(order); err != nil {
+	if err := a.store.SaveOrder(order); err != nil {
 		return nil, err
 	}
 	return order, nil

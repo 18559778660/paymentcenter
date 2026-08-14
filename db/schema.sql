@@ -27,3 +27,17 @@ CREATE TABLE IF NOT EXISTS payment_orders (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 项目启动时也会通过 GORM AutoMigrate 自动校验/迁移表结构。
+
+CREATE TABLE IF NOT EXISTS users (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '后台用户ID',
+  username VARCHAR(64) NOT NULL COMMENT '登录账号',
+  password_hash VARCHAR(255) NOT NULL COMMENT 'bcrypt密码哈希',
+  role VARCHAR(32) NOT NULL DEFAULT 'admin' COMMENT '角色',
+  status BIGINT NOT NULL DEFAULT 1 COMMENT '1启用 0禁用',
+  last_login_at DATETIME NULL COMMENT '最后登录时间',
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY idx_users_username (username),
+  KEY idx_users_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

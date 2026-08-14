@@ -17,6 +17,7 @@
 - 查询订单
 - 标记成功
 - 标记失败
+- 登录鉴权
 - MySQL 5.7 + GORM 持久化订单
 
 ## 目录结构
@@ -30,10 +31,14 @@ paymentCenter/
 │  ├─ config/
 │  │  └─ config.go
 │  ├─ controller/
+│  │  ├─ auth_controller.go
 │  │  ├─ health_controller.go
 │  │  └─ order_controller.go
+│  ├─ middleware/
+│  │  └─ auth.go
 │  ├─ model/
-│  │  └─ order.go
+│  │  ├─ order.go
+│  │  └─ user.go
 │  ├─ service/
 │  │  └─ service.go
 │  ├─ store/
@@ -70,6 +75,16 @@ DB_DSN=root:root@tcp(127.0.0.1:3306)/payment_center?charset=utf8mb4&parseTime=tr
 
 项目启动时会执行 GORM `AutoMigrate`，用于自动校验和补齐 `payment_orders` 表结构。`db/schema.sql` 仍然保留，方便你手动初始化数据库。
 
+启动时还会自动初始化默认管理员账号。如果 `users` 表里不存在该用户名，会自动创建。
+
+默认账号：
+
+```text
+admin / admin123
+```
+
+正式环境需要改 `.env` 里的 `ADMIN_USERNAME`、`ADMIN_PASSWORD` 和 `AUTH_SECRET`。
+
 ## 分层说明
 
 - `controller`：接收 HTTP 请求，做参数绑定，返回统一响应。
@@ -104,10 +119,45 @@ set PAYMENT_CENTER_ADDR=:8081
 - `PAYMENT_CENTER_NAME`
 - `PAYMENT_CENTER_ADDR`
 - `DB_DSN`
+- `AUTH_SECRET`
+- `AUTH_TOKEN_TTL_HOURS`
+- `ADMIN_USERNAME`
+- `ADMIN_PASSWORD`
 - `STRIPE_API_KEY`
 - `STRIPE_WEBHOOK_SECRET`
 
 ## 接口
+
+### `POST /api/auth/login`
+
+登录接口，公开访问。
+
+请求：
+
+```json
+{
+  "username": "admin",
+  "password": "admin123"
+}
+```
+
+返回里会包含：
+
+```json
+{
+  "token": "...",
+  "token_type": "Bearer",
+  "expires_at": "..."
+}
+```
+
+### 鉴权方式
+
+除 `/api/auth/login` 以外，其它 `/api` 接口都需要携带登录 token：
+
+```text
+Authorization: Bearer <token>
+```
 
 ### `GET /api/health`
 

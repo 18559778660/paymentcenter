@@ -1,6 +1,10 @@
 package config
 
-import "os"
+import (
+	"os"
+	"strconv"
+	"time"
+)
 
 // 配置
 type Config struct {
@@ -10,6 +14,10 @@ type Config struct {
 	StripeAPIKey  string
 	StripeWebhook string
 	DBDSN         string
+	AuthSecret    string
+	TokenTTL      time.Duration
+	AdminUsername string
+	AdminPassword string
 }
 
 // 获取环境变量
@@ -18,6 +26,19 @@ func getenv(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+// 获取环境变量 int
+func getenvInt(key string, fallback int) int {
+	v := os.Getenv(key)
+	if v == "" {
+		return fallback
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil {
+		return fallback
+	}
+	return n
 }
 
 // 加载配置
@@ -29,5 +50,9 @@ func Load() Config {
 		StripeAPIKey:  os.Getenv("STRIPE_API_KEY"),
 		StripeWebhook: os.Getenv("STRIPE_WEBHOOK_SECRET"),
 		DBDSN:         getenv("DB_DSN", "root:root@tcp(127.0.0.1:3306)/payment_center?charset=utf8mb4&parseTime=true&loc=Local"),
+		AuthSecret:    getenv("AUTH_SECRET", "dev-payment-center-secret"),
+		TokenTTL:      time.Duration(getenvInt("AUTH_TOKEN_TTL_HOURS", 12)) * time.Hour,
+		AdminUsername: getenv("ADMIN_USERNAME", "admin"),
+		AdminPassword: getenv("ADMIN_PASSWORD", "admin123"),
 	}
 }
