@@ -5,13 +5,13 @@ import (
 	"strconv"
 	"time"
 
-	"paymentcenter/internal/domain"
+	"paymentcenter/internal/model"
 )
 
 type OrderStore interface {
-	Save(order *domain.Order) error
-	Get(id string) (*domain.Order, error)
-	List() ([]*domain.Order, error)
+	Save(order *model.Order) error
+	Get(id string) (*model.Order, error)
+	List() ([]*model.Order, error)
 }
 
 type App struct {
@@ -41,7 +41,7 @@ type CreateOrderResponse struct {
 func (a *App) CreateOrder(req CreateOrderRequest) (CreateOrderResponse, error) {
 	now := time.Now().UTC()
 	id := "pc_" + strconv.FormatInt(now.UnixNano(), 10)
-	order := &domain.Order{
+	order := &model.Order{
 		ID:            id,
 		MerchantOrder: req.MerchantOrder,
 		MerchantSite:  req.MerchantSite,
@@ -51,7 +51,7 @@ func (a *App) CreateOrder(req CreateOrderRequest) (CreateOrderResponse, error) {
 		Currency:      req.Currency,
 		ReturnURL:     req.ReturnURL,
 		NotifyURL:     req.NotifyURL,
-		Status:        domain.OrderStatusCreated,
+		Status:        model.OrderStatusCreated,
 		CreatedAt:     now,
 		UpdatedAt:     now,
 	}
@@ -67,22 +67,22 @@ func (a *App) CreateOrder(req CreateOrderRequest) (CreateOrderResponse, error) {
 }
 
 // 获取订单
-func (a *App) GetOrder(id string) (*domain.Order, error) {
+func (a *App) GetOrder(id string) (*model.Order, error) {
 	return a.store.Get(id)
 }
 
 // 获取订单列表
-func (a *App) ListOrders() ([]*domain.Order, error) {
+func (a *App) ListOrders() ([]*model.Order, error) {
 	return a.store.List()
 }
 
 // 标记订单已支付
-func (a *App) MarkPaid(id, providerRef string) (*domain.Order, error) {
+func (a *App) MarkPaid(id, providerRef string) (*model.Order, error) {
 	order, err := a.store.Get(id)
 	if err != nil {
 		return nil, err
 	}
-	order.Status = domain.OrderStatusPaid
+	order.Status = model.OrderStatusPaid
 	order.ProviderRef = providerRef
 	order.UpdatedAt = time.Now().UTC()
 	if err := a.store.Save(order); err != nil {
@@ -92,12 +92,12 @@ func (a *App) MarkPaid(id, providerRef string) (*domain.Order, error) {
 }
 
 // 标记订单已失败
-func (a *App) MarkFailed(id, message string) (*domain.Order, error) {
+func (a *App) MarkFailed(id, message string) (*model.Order, error) {
 	order, err := a.store.Get(id)
 	if err != nil {
 		return nil, err
 	}
-	order.Status = domain.OrderStatusFailed
+	order.Status = model.OrderStatusFailed
 	order.ErrorMessage = message
 	order.UpdatedAt = time.Now().UTC()
 	if err := a.store.Save(order); err != nil {

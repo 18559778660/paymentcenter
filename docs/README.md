@@ -29,13 +29,16 @@ paymentCenter/
 ├─ internal/
 │  ├─ config/
 │  │  └─ config.go
-│  ├─ domain/
+│  ├─ controller/
+│  │  ├─ health_controller.go
+│  │  └─ order_controller.go
+│  ├─ model/
 │  │  └─ order.go
+│  ├─ service/
+│  │  └─ service.go
 │  ├─ store/
 │  │  ├─ errors.go
 │  │  └─ mysql.go
-│  ├─ service/
-│  │  └─ service.go
 │  └─ transport/
 │     └─ http/
 │        └─ router.go
@@ -66,6 +69,14 @@ DB_DSN=root:root@tcp(127.0.0.1:3306)/payment_center?charset=utf8mb4&parseTime=tr
 如果你的 MySQL 密码不是 `root`，修改项目根目录的 `.env` 里的 `DB_DSN`。
 
 项目启动时会执行 GORM `AutoMigrate`，用于自动校验和补齐 `payment_orders` 表结构。`db/schema.sql` 仍然保留，方便你手动初始化数据库。
+
+## 分层说明
+
+- `controller`：接收 HTTP 请求，做参数绑定，返回统一响应。
+- `service`：业务逻辑层，比如建单、订单状态流转。
+- `store`：数据访问层，当前使用 GORM + MySQL。
+- `model`：数据库模型，当前订单模型是 `payment_orders`。
+- `transport/http`：Gin 路由表，集中维护 `GET/POST` 和 controller 方法的对应关系。
 
 ## 启动方式
 

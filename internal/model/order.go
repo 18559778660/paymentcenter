@@ -1,4 +1,4 @@
-package domain
+package model
 
 import "time"
 
@@ -12,7 +12,7 @@ const (
 	OrderStatusCancelled OrderStatus = "cancelled"
 )
 
-// 订单实体
+// Order 是支付中心订单模型，对应 payment_orders 表。
 type Order struct {
 	ID            string      `gorm:"column:id;type:varchar(64);primaryKey" json:"id"`
 	MerchantOrder string      `gorm:"column:merchant_order;type:varchar(128);not null;index" json:"merchant_order"`

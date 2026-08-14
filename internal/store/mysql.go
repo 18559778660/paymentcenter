@@ -6,7 +6,7 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
-	"paymentcenter/internal/domain"
+	"paymentcenter/internal/model"
 )
 
 // MySQL 存储
@@ -20,7 +20,7 @@ func NewMySQLStore(dsn string) (*MySQLStore, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := db.AutoMigrate(&domain.Order{}); err != nil {
+	if err := db.AutoMigrate(&model.Order{}); err != nil {
 		return nil, err
 	}
 	return &MySQLStore{db: db}, nil
@@ -36,13 +36,13 @@ func (s *MySQLStore) Close() error {
 }
 
 // 保存订单
-func (s *MySQLStore) Save(order *domain.Order) error {
+func (s *MySQLStore) Save(order *model.Order) error {
 	return s.db.Save(order).Error
 }
 
 // 获取订单
-func (s *MySQLStore) Get(id string) (*domain.Order, error) {
-	var order domain.Order
+func (s *MySQLStore) Get(id string) (*model.Order, error) {
+	var order model.Order
 	if err := s.db.First(&order, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrNotFound
@@ -53,8 +53,8 @@ func (s *MySQLStore) Get(id string) (*domain.Order, error) {
 }
 
 // 获取订单列表
-func (s *MySQLStore) List() ([]*domain.Order, error) {
-	var orders []*domain.Order
+func (s *MySQLStore) List() ([]*model.Order, error) {
+	var orders []*model.Order
 	if err := s.db.Order("created_at DESC").Limit(100).Find(&orders).Error; err != nil {
 		return nil, err
 	}
