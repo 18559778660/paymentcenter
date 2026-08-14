@@ -94,6 +94,19 @@ func (a *App) ensureMenus(seeds []menuSeed) ([]uint, error) {
 				if err := a.store.CreateMenu(menu); err != nil {
 					return err
 				}
+			} else {
+				menu.ParentID = parentID
+				menu.Title = item.Title
+				menu.Path = item.Path
+				menu.Component = item.Component
+				menu.Icon = item.Icon
+				menu.AuthCode = item.AuthCode
+				menu.Type = item.Type
+				menu.Sort = item.Sort
+				menu.Status = model.MenuStatusEnabled
+				if err := a.store.SaveMenu(menu); err != nil {
+					return err
+				}
 			}
 			ids = append(ids, menu.ID)
 			if err := walk(menu.ID, item.Children); err != nil {
@@ -153,17 +166,17 @@ func rbacMenuTree() []menuSeed {
 			Children: []menuSeed{
 				{
 					Name: "PermissionUser", Title: "用户管理", Path: "/permission/user",
-					Component: "/permission/user/index", Icon: "lucide:user",
+					Component: "/_shared/placeholder", Icon: "lucide:user",
 					AuthCode: "system:user:list", Type: model.MenuTypeMenu, Sort: 1,
 				},
 				{
 					Name: "PermissionRole", Title: "角色管理", Path: "/permission/role",
-					Component: "/permission/role/index", Icon: "lucide:users-round",
+					Component: "/_shared/placeholder", Icon: "lucide:users-round",
 					AuthCode: "system:role:list", Type: model.MenuTypeMenu, Sort: 2,
 				},
 				{
 					Name: "PermissionMenu", Title: "菜单管理", Path: "/permission/menu",
-					Component: "/permission/menu/index", Icon: "lucide:menu",
+					Component: "/_shared/placeholder", Icon: "lucide:menu",
 					AuthCode: "system:menu:list", Type: model.MenuTypeMenu, Sort: 3,
 				},
 			},

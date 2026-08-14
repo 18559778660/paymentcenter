@@ -77,3 +77,18 @@ func (a *AuthController) Codes(c *gin.Context) {
 func (a *AuthController) Logout(c *gin.Context) {
 	response.Success(c, "")
 }
+
+// Menus 返回当前用户菜单树，前端 accessMode=backend 时用来生成侧边栏。
+func (a *AuthController) Menus(c *gin.Context) {
+	user, ok := middleware.CurrentUser(c)
+	if !ok {
+		response.Unauthorized(c, "Unauthorized")
+		return
+	}
+	menus, err := a.app.GetUserMenus(user.ID)
+	if err != nil {
+		response.Fail(c, err.Error())
+		return
+	}
+	response.Success(c, menus)
+}

@@ -32,6 +32,7 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 			authed.GET("/user/info", authController.UserInfo)
 			authed.GET("/auth/codes", authController.Codes)
 			authed.POST("/auth/logout", authController.Logout)
+			authed.GET("/menu/all", authController.Menus)
 
 			authed.GET("/health", healthController.Health)
 

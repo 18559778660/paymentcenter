@@ -164,6 +164,11 @@ func (s *MySQLStore) ListMenus() ([]model.Menu, error) {
 	return menus, err
 }
 
+// SaveMenu 更新菜单字段。
+func (s *MySQLStore) SaveMenu(menu *model.Menu) error {
+	return s.db.Save(menu).Error
+}
+
 // EnsureRoleMenu 给角色绑定菜单，已存在则不重复插入。
 func (s *MySQLStore) EnsureRoleMenu(roleID, menuID uint) error {
 	rel := model.RoleMenu{RoleID: roleID, MenuID: menuID}

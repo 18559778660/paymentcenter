@@ -23,6 +23,7 @@ type Store interface {
 	CreateMenu(menu *model.Menu) error
 	FindMenuByName(name string) (*model.Menu, error)
 	ListMenus() ([]model.Menu, error)
+	SaveMenu(menu *model.Menu) error
 	EnsureRoleMenu(roleID, menuID uint) error
 	ListMenusByUserID(userID uint) ([]model.Menu, error)
 }
