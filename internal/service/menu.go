@@ -49,12 +49,14 @@ func buildVbenMenus(parentID uint, parentPath string, byParent map[uint][]model.
 				"title": menu.Title,
 			},
 		}
-		if menu.Name == "Analytics" {
-			node.Meta["affixTab"] = true
+		if menu.HideInMenu {
 			node.Meta["hideInMenu"] = true
 		}
-		if menu.Name == "Dashboard" {
+		if menu.HideChildrenInMenu {
 			node.Meta["hideChildrenInMenu"] = true
+		}
+		if menu.AffixTab {
+			node.Meta["affixTab"] = true
 		}
 
 		children := buildVbenMenus(menu.ID, menu.Path, byParent)

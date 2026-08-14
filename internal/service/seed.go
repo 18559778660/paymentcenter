@@ -6,15 +6,18 @@ import (
 
 // menuSeed 初始化菜单用的内存结构，启动时写入 menus 表。
 type menuSeed struct {
-	Name      string     // 路由 Name，需唯一
-	Title     string     // 显示标题
-	Path      string     // 前端路径
-	Component string     // 前端组件路径
-	Icon      string     // 图标
-	AuthCode  string     // 权限码
-	Type      int        // 0目录 1菜单 2按钮
-	Sort      int        // 排序
-	Children  []menuSeed // 子菜单
+	Name               string     // 路由 Name，需唯一
+	Title              string     // 显示标题
+	Path               string     // 前端路径
+	Component          string     // 前端组件路径
+	Icon               string     // 图标
+	AuthCode           string     // 权限码
+	Type               int        // 0目录 1菜单 2按钮
+	Sort               int        // 排序
+	HideInMenu         bool       // 不在侧边栏显示
+	HideChildrenInMenu bool       // 侧边栏不展开子菜单
+	AffixTab           bool       // 标签栏钉住
+	Children           []menuSeed // 子菜单
 }
 
 // SeedRBAC 启动时幂等初始化角色、菜单、默认管理员。已存在的数据不会覆盖。
@@ -68,7 +71,7 @@ func (a *App) ensureRole(code, name, remark string) (*model.Role, error) {
 	return role, nil
 }
 
-// ensureMenus 按树写入菜单，已存在的 Name 跳过创建，返回全部菜单 ID。
+// ensureMenus 按树写入菜单，已存在的 Name 不覆盖，返回全部菜单 ID。
 func (a *App) ensureMenus(seeds []menuSeed) ([]uint, error) {
 	ids := make([]uint, 0)
 	var walk func(parentID uint, items []menuSeed) error
@@ -80,31 +83,21 @@ func (a *App) ensureMenus(seeds []menuSeed) ([]uint, error) {
 			}
 			if isNotFound(err) {
 				menu = &model.Menu{
-					ParentID:  parentID,
-					Name:      item.Name,
-					Title:     item.Title,
-					Path:      item.Path,
-					Component: item.Component,
-					Icon:      item.Icon,
-					AuthCode:  item.AuthCode,
-					Type:      item.Type,
-					Sort:      item.Sort,
-					Status:    model.MenuStatusEnabled,
+					ParentID:           parentID,
+					Name:               item.Name,
+					Title:              item.Title,
+					Path:               item.Path,
+					Component:          item.Component,
+					Icon:               item.Icon,
+					AuthCode:           item.AuthCode,
+					Type:               item.Type,
+					Sort:               item.Sort,
+					Status:             model.MenuStatusEnabled,
+					HideInMenu:         item.HideInMenu,
+					HideChildrenInMenu: item.HideChildrenInMenu,
+					AffixTab:           item.AffixTab,
 				}
 				if err := a.store.CreateMenu(menu); err != nil {
-					return err
-				}
-			} else {
-				menu.ParentID = parentID
-				menu.Title = item.Title
-				menu.Path = item.Path
-				menu.Component = item.Component
-				menu.Icon = item.Icon
-				menu.AuthCode = item.AuthCode
-				menu.Type = item.Type
-				menu.Sort = item.Sort
-				menu.Status = model.MenuStatusEnabled
-				if err := a.store.SaveMenu(menu); err != nil {
 					return err
 				}
 			}
@@ -151,12 +144,13 @@ func rbacMenuTree() []menuSeed {
 	return []menuSeed{
 		{
 			Name: "Dashboard", Title: "首页", Path: "/dashboard", Icon: "lucide:home",
-			Type: model.MenuTypeDir, Sort: -1,
+			Type: model.MenuTypeDir, Sort: -1, HideChildrenInMenu: true,
 			Children: []menuSeed{
 				{
 					Name: "Analytics", Title: "首页", Path: "/dashboard/analytics",
 					Component: "/dashboard/analytics/index", Icon: "lucide:home",
 					AuthCode: "dashboard:view", Type: model.MenuTypeMenu, Sort: 1,
+					HideInMenu: true, AffixTab: true,
 				},
 			},
 		},

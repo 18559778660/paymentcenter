@@ -21,11 +21,14 @@ type Menu struct {
 	Component string    `gorm:"column:component;type:varchar(255);not null;default:''" json:"component"` // 前端组件路径
 	Icon      string    `gorm:"column:icon;type:varchar(64);not null;default:''" json:"icon"`         // 图标
 	AuthCode  string    `gorm:"column:auth_code;type:varchar(64);not null;default:''" json:"auth_code"` // 权限码，给 /auth/codes
-	Type      int       `gorm:"column:type;not null;default:1" json:"type"`                           // 0目录 1菜单 2按钮
-	Sort      int       `gorm:"column:sort;not null;default:0" json:"sort"`                           // 排序，越小越靠前
-	Status    int       `gorm:"column:status;not null;default:1;index" json:"status"`                 // 1启用 0禁用
-	CreatedAt time.Time `gorm:"column:created_at" json:"created_at"`                                  // 创建时间
-	UpdatedAt time.Time `gorm:"column:updated_at" json:"updated_at"`                                  // 更新时间
+	Type               int       `gorm:"column:type;not null;default:1" json:"type"`                        // 0目录 1菜单 2按钮
+	Sort               int       `gorm:"column:sort;not null;default:0" json:"sort"`                        // 排序，越小越靠前
+	Status             int       `gorm:"column:status;not null;default:1;index" json:"status"`              // 1启用 0禁用
+	HideInMenu         bool      `gorm:"column:hide_in_menu;not null;default:false" json:"hide_in_menu"`    // 不在侧边栏显示
+	HideChildrenInMenu bool      `gorm:"column:hide_children_in_menu;not null;default:false" json:"hide_children_in_menu"` // 侧边栏不展开子菜单
+	AffixTab           bool      `gorm:"column:affix_tab;not null;default:false" json:"affix_tab"`          // 标签栏钉住，关不掉
+	CreatedAt          time.Time `gorm:"column:created_at" json:"created_at"`                               // 创建时间
+	UpdatedAt          time.Time `gorm:"column:updated_at" json:"updated_at"`                               // 更新时间
 }
 
 // TableName 指定表名。
