@@ -13,11 +13,10 @@ type Router struct {
 	engine *gin.Engine
 }
 
-// 创建路由
 func NewRouter(cfg config.Config, app *service.App) *Router {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
-	r.Use(gin.Logger(), gin.Recovery())
+	r.Use(gin.Logger(), gin.Recovery(), middleware.CORS())
 
 	healthController := controller.NewHealthController(cfg)
 	authController := controller.NewAuthController(app)
@@ -30,6 +29,10 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 		authed := api.Group("")
 		authed.Use(middleware.Auth(app))
 		{
+			authed.GET("/user/info", authController.UserInfo)
+			authed.GET("/auth/codes", authController.Codes)
+			authed.POST("/auth/logout", authController.Logout)
+
 			authed.GET("/health", healthController.Health)
 
 			authed.POST("/orders", orderController.Create)
@@ -43,7 +46,6 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 	return &Router{engine: r}
 }
 
-// 启动服务器
 func (r *Router) Run(addr string) error {
 	return r.engine.Run(addr)
 }

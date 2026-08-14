@@ -17,8 +17,9 @@
 - 查询订单
 - 标记成功
 - 标记失败
-- 登录鉴权
-- MySQL 5.7 + GORM 持久化订单
+- 登录鉴权（对齐 Vben：login / user/info / codes / logout）
+- 用户、角色、菜单基础表
+- MySQL 5.7 + GORM 持久化
 
 ## 目录结构
 
@@ -38,7 +39,11 @@ paymentCenter/
 │  │  └─ auth.go
 │  ├─ model/
 │  │  ├─ order.go
-│  │  └─ user.go
+│  │  ├─ user.go
+│  │  ├─ role.go
+│  │  ├─ menu.go
+│  │  ├─ user_role.go
+│  │  └─ role_menu.go
 │  ├─ service/
 │  │  └─ service.go
 │  ├─ store/
@@ -141,23 +146,40 @@ set PAYMENT_CENTER_ADDR=:8081
 }
 ```
 
-返回里会包含：
+返回：
 
 ```json
 {
-  "token": "...",
-  "token_type": "Bearer",
-  "expires_at": "..."
+  "code": 0,
+  "data": {
+    "accessToken": "..."
+  },
+  "message": "ok",
+  "msg": "ok"
 }
 ```
+
+### `GET /api/user/info`
+
+需登录。返回当前用户，字段对齐 Vben：`userId`、`username`、`realName`、`roles`、`homePath`。
+
+### `GET /api/auth/codes`
+
+需登录。返回权限码字符串数组，例如 `["system:user:list"]`。
+
+### `POST /api/auth/logout`
+
+需登录。当前仅返回成功，前端会清本地状态。
 
 ### 鉴权方式
 
 除 `/api/auth/login` 以外，其它 `/api` 接口都需要携带登录 token：
 
 ```text
-Authorization: Bearer <token>
+Authorization: Bearer <accessToken>
 ```
+
+Token 无效时返回 HTTP 401。
 
 ### `GET /api/health`
 
@@ -191,16 +213,17 @@ Authorization: Bearer <token>
 {
   "code": 0,
   "data": {},
-  "msg": "success"
+  "message": "ok",
+  "msg": "ok"
 }
 ```
 
 约定：
 
 - `code = 0` 成功
-- `code = 1` 失败
+- `code != 0` 失败
 - `data` 放业务数据
-- `msg` 放提示信息
+- `message` / `msg` 放提示信息（前端读 `message`）
 
 ## 下一步建议
 

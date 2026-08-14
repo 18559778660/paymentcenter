@@ -2,4 +2,5 @@ package store
 
 import "errors"
 
-var ErrNotFound = errors.New("order not found")
+// ErrNotFound 数据库层：按条件查询不到记录。
+var ErrNotFound = errors.New("record not found")

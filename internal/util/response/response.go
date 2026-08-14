@@ -7,48 +7,55 @@ import (
 )
 
 const (
-	CodeSuccess = 0
-	CodeFail    = 1
+	CodeSuccess      = 0  // 业务成功，前端判定 code === 0
+	CodeFail         = 1  // 一般业务失败
+	CodeUnauthorized = -1 // token 无效或未登录
 )
 
+// Body 统一响应体。前端成功取 data；提示文案同时给 message 和 msg，兼容 Vben。
 type Body struct {
-	Code int         `json:"code"`
-	Data interface{} `json:"data"`
-	Msg  string      `json:"msg"`
+	Code    int         `json:"code"`    // 业务码，0 成功
+	Data    interface{} `json:"data"`    // 业务数据
+	Message string      `json:"message"` // 提示信息，前端优先读这个
+	Msg     string      `json:"msg"`     // 旧字段，内容和 message 相同
 }
 
-// 成功响应
+// Success 返回成功，提示为 ok。
 func Success(c *gin.Context, data interface{}) {
-	c.JSON(http.StatusOK, Body{
-		Code: CodeSuccess,
-		Data: data,
-		Msg:  "success",
-	})
+	write(c, http.StatusOK, CodeSuccess, data, "ok")
 }
 
-// 成功响应带消息
+// SuccessMsg 返回成功，并自定义提示文案。
 func SuccessMsg(c *gin.Context, data interface{}, msg string) {
-	c.JSON(http.StatusOK, Body{
-		Code: CodeSuccess,
-		Data: data,
-		Msg:  msg,
-	})
+	write(c, http.StatusOK, CodeSuccess, data, msg)
 }
 
-// 失败响应
+// Fail 返回业务失败。HTTP 仍是 200，由 code != 0 表示失败。
 func Fail(c *gin.Context, msg string) {
-	c.JSON(http.StatusOK, Body{
-		Code: CodeFail,
-		Data: nil,
-		Msg:  msg,
-	})
+	write(c, http.StatusOK, CodeFail, nil, msg)
 }
 
-// 失败响应带代码和数据
+// FailWithCode 返回业务失败，并指定业务码和 data。
 func FailWithCode(c *gin.Context, code int, msg string, data interface{}) {
 	c.JSON(http.StatusOK, Body{
-		Code: code,
-		Data: data,
-		Msg:  msg,
+		Code:    code,
+		Data:    data,
+		Message: msg,
+		Msg:     msg,
+	})
+}
+
+// Unauthorized 返回未登录或 token 失效。HTTP 401，前端会跳回登录页。
+func Unauthorized(c *gin.Context, msg string) {
+	write(c, http.StatusUnauthorized, CodeUnauthorized, nil, msg)
+}
+
+// write 实际写出 JSON 响应。
+func write(c *gin.Context, httpStatus, code int, data interface{}, msg string) {
+	c.JSON(httpStatus, Body{
+		Code:    code,
+		Data:    data,
+		Message: msg,
+		Msg:     msg,
 	})
 }

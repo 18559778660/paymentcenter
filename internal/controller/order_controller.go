@@ -7,17 +7,17 @@ import (
 	"paymentcenter/internal/util/response"
 )
 
-// 订单控制器
+// OrderController 控制层：支付订单相关接口。
 type OrderController struct {
 	app *service.App
 }
 
-// 创建订单控制器
+// NewOrderController 创建订单控制器。
 func NewOrderController(app *service.App) *OrderController {
 	return &OrderController{app: app}
 }
 
-// 创建订单
+// Create 创建支付中心订单。
 func (o *OrderController) Create(c *gin.Context) {
 	var req service.CreateOrderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -32,7 +32,7 @@ func (o *OrderController) Create(c *gin.Context) {
 	response.SuccessMsg(c, res, "created")
 }
 
-// 获取订单列表
+// List 查询订单列表。
 func (o *OrderController) List(c *gin.Context) {
 	orders, err := o.app.ListOrders()
 	if err != nil {
@@ -42,7 +42,7 @@ func (o *OrderController) List(c *gin.Context) {
 	response.Success(c, gin.H{"items": orders})
 }
 
-// 获取订单
+// Get 按订单号查询单笔订单。
 func (o *OrderController) Get(c *gin.Context) {
 	order, err := o.app.GetOrder(c.Param("id"))
 	if err != nil {
@@ -52,7 +52,7 @@ func (o *OrderController) Get(c *gin.Context) {
 	response.Success(c, order)
 }
 
-// 标记订单已支付
+// MarkPaid 人工标记订单已支付。
 func (o *OrderController) MarkPaid(c *gin.Context) {
 	var body struct {
 		ProviderRef string `json:"provider_ref"`
@@ -69,7 +69,7 @@ func (o *OrderController) MarkPaid(c *gin.Context) {
 	response.SuccessMsg(c, order, "updated")
 }
 
-// 标记订单已失败
+// MarkFailed 人工标记订单失败。
 func (o *OrderController) MarkFailed(c *gin.Context) {
 	var body struct {
 		Message string `json:"message"`

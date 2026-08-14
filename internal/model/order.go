@@ -2,35 +2,37 @@ package model
 
 import "time"
 
+// OrderStatus 支付订单状态。
 type OrderStatus string
 
 const (
-	OrderStatusCreated   OrderStatus = "created"
-	OrderStatusPending   OrderStatus = "pending"
-	OrderStatusPaid      OrderStatus = "paid"
-	OrderStatusFailed    OrderStatus = "failed"
-	OrderStatusCancelled OrderStatus = "cancelled"
+	OrderStatusCreated   OrderStatus = "created"   // 已创建
+	OrderStatusPending   OrderStatus = "pending"   // 待支付
+	OrderStatusPaid      OrderStatus = "paid"      // 已支付
+	OrderStatusFailed    OrderStatus = "failed"    // 失败
+	OrderStatusCancelled OrderStatus = "cancelled" // 已取消
 )
 
-// Order 是支付中心订单模型，对应 payment_orders 表。
+// Order 模型层：支付中心订单，对应 payment_orders 表。
 type Order struct {
-	ID            string      `gorm:"column:id;type:varchar(64);primaryKey" json:"id"`
-	MerchantOrder string      `gorm:"column:merchant_order;type:varchar(128);not null;index" json:"merchant_order"`
-	MerchantSite  string      `gorm:"column:merchant_site;type:varchar(255);not null" json:"merchant_site"`
-	Channel       string      `gorm:"column:channel;type:varchar(64);not null" json:"channel"`
-	Provider      string      `gorm:"column:provider;type:varchar(64);not null" json:"provider"`
-	Amount        int64       `gorm:"column:amount;not null" json:"amount"`
-	Currency      string      `gorm:"column:currency;type:varchar(16);not null" json:"currency"`
-	ReturnURL     string      `gorm:"column:return_url;type:text;not null" json:"return_url"`
-	NotifyURL     string      `gorm:"column:notify_url;type:text;not null" json:"notify_url"`
-	CheckoutURL   string      `gorm:"column:checkout_url;type:text" json:"checkout_url,omitempty"`
-	ProviderRef   string      `gorm:"column:provider_ref;type:varchar(128);not null;default:''" json:"provider_ref,omitempty"`
-	Status        OrderStatus `gorm:"column:status;type:varchar(32);not null;index" json:"status"`
-	ErrorMessage  string      `gorm:"column:error_message;type:text" json:"error_message,omitempty"`
-	CreatedAt     time.Time   `gorm:"column:created_at;index" json:"created_at"`
-	UpdatedAt     time.Time   `gorm:"column:updated_at" json:"updated_at"`
+	ID            string      `gorm:"column:id;type:varchar(64);primaryKey" json:"id"`                        // 支付中心订单号
+	MerchantOrder string      `gorm:"column:merchant_order;type:varchar(128);not null;index" json:"merchant_order"` // A站订单号
+	MerchantSite  string      `gorm:"column:merchant_site;type:varchar(255);not null" json:"merchant_site"`   // A站站点标识
+	Channel       string      `gorm:"column:channel;type:varchar(64);not null" json:"channel"`                // 通道代码
+	Provider      string      `gorm:"column:provider;type:varchar(64);not null" json:"provider"`              // 支付平台，例如 stripe
+	Amount        int64       `gorm:"column:amount;not null" json:"amount"`                                   // 金额，最小货币单位
+	Currency      string      `gorm:"column:currency;type:varchar(16);not null" json:"currency"`              // 币种
+	ReturnURL     string      `gorm:"column:return_url;type:text;not null" json:"return_url"`                 // 同步返回地址
+	NotifyURL     string      `gorm:"column:notify_url;type:text;not null" json:"notify_url"`                 // 异步通知地址
+	CheckoutURL   string      `gorm:"column:checkout_url;type:text" json:"checkout_url,omitempty"`            // 支付跳转地址
+	ProviderRef   string      `gorm:"column:provider_ref;type:varchar(128);not null;default:''" json:"provider_ref,omitempty"` // 支付平台交易号
+	Status        OrderStatus `gorm:"column:status;type:varchar(32);not null;index" json:"status"`            // 订单状态
+	ErrorMessage  string      `gorm:"column:error_message;type:text" json:"error_message,omitempty"`          // 失败原因
+	CreatedAt     time.Time   `gorm:"column:created_at;index" json:"created_at"`                              // 创建时间
+	UpdatedAt     time.Time   `gorm:"column:updated_at" json:"updated_at"`                                    // 更新时间
 }
 
+// TableName 指定表名。
 func (Order) TableName() string {
 	return "payment_orders"
 }

@@ -16,6 +16,15 @@ type Store interface {
 	SaveUser(user *model.User) error
 	GetUserByID(id uint) (*model.User, error)
 	FindUserByUsername(username string) (*model.User, error)
+	CreateRole(role *model.Role) error
+	FindRoleByCode(code string) (*model.Role, error)
+	ListRolesByUserID(userID uint) ([]model.Role, error)
+	EnsureUserRole(userID, roleID uint) error
+	CreateMenu(menu *model.Menu) error
+	FindMenuByName(name string) (*model.Menu, error)
+	ListMenus() ([]model.Menu, error)
+	EnsureRoleMenu(roleID, menuID uint) error
+	ListMenusByUserID(userID uint) ([]model.Menu, error)
 }
 
 type App struct {
