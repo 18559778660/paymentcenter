@@ -33,8 +33,11 @@ func (a *App) GetUserMenus(userID uint) ([]VbenMenu, error) {
 	return buildVbenMenus(0, "", byParent), nil
 }
 
+// 构建 Vben 路由树
 func buildVbenMenus(parentID uint, parentPath string, byParent map[uint][]model.Menu) []VbenMenu {
+	// 获取父级菜单
 	items := byParent[parentID]
+	// 创建结果
 	result := make([]VbenMenu, 0, len(items))
 	for _, menu := range items {
 		node := VbenMenu{
@@ -71,7 +74,9 @@ func buildVbenMenus(parentID uint, parentPath string, byParent map[uint][]model.
 	return result
 }
 
+// 菜单路由路径
 func menuRoutePath(parentPath, fullPath string) string {
+	// 如果父级路径为空，则返回完整路径
 	if parentPath == "" {
 		return fullPath
 	}
@@ -82,7 +87,9 @@ func menuRoutePath(parentPath, fullPath string) string {
 	return fullPath
 }
 
+// 第一个叶子路径
 func firstLeafPath(parentFullPath string, children []VbenMenu) string {
+	// 如果子菜单为空，则返回父级路径
 	if len(children) == 0 {
 		return parentFullPath
 	}

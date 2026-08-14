@@ -9,6 +9,16 @@ import (
 	"paymentcenter/internal/util/response"
 )
 
+// 认证
+// 获取 Authorization 头
+// 如果 Authorization 头为空，则返回错误
+// 如果 Authorization 头不以 Bearer 开头，则返回错误
+// 认证 Token
+// 获取用户
+// 如果用户不存在，则返回错误
+// 如果用户状态不启用，则返回错误
+// 设置用户
+// 继续执行
 func Auth(app *service.App) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		header := c.GetHeader("Authorization")
@@ -37,7 +47,12 @@ func Auth(app *service.App) gin.HandlerFunc {
 	}
 }
 
+// 当前用户
+// 获取用户
+// 如果用户不存在，则返回 false
+// 如果用户存在，则返回用户
 func CurrentUser(c *gin.Context) (service.AuthUser, bool) {
+	// 获取用户
 	v, ok := c.Get("auth_user")
 	if !ok {
 		return service.AuthUser{}, false
@@ -46,6 +61,7 @@ func CurrentUser(c *gin.Context) (service.AuthUser, bool) {
 	return user, ok
 }
 
+// CORS 跨域中间件
 func CORS() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		origin := c.GetHeader("Origin")
