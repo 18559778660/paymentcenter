@@ -101,7 +101,7 @@ admin / admin123
 ## 启动方式
 
 ```bash
-go run ./cmd/payment-center
+go run .
 ```
 
 默认监听：
