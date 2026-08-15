@@ -27,6 +27,96 @@
     ]
   },
   {
+    "name": "Channel",
+    "title": "通道管理",
+    "path": "/channel",
+    "icon": "lucide:rocket",
+    "type": 0,
+    "sort": 30,
+    "children": [
+      {
+        "name": "ChannelList",
+        "title": "通道列表",
+        "path": "/channel/list",
+        "component": "/_shared/placeholder",
+        "icon": "lucide:list",
+        "authCode": "channel:list",
+        "type": 1,
+        "sort": 1
+      },
+      {
+        "name": "ChannelAccount",
+        "title": "通道账号",
+        "path": "/channel/account",
+        "component": "/_shared/placeholder",
+        "icon": "lucide:user-cog",
+        "authCode": "channel:account",
+        "type": 1,
+        "sort": 2
+      },
+      {
+        "name": "ChannelGroup",
+        "title": "通道分组",
+        "path": "/channel/group",
+        "component": "/_shared/placeholder",
+        "icon": "lucide:layers",
+        "authCode": "channel:group",
+        "type": 1,
+        "sort": 3
+      },
+      {
+        "name": "ChannelAssign",
+        "title": "账号分配",
+        "path": "/channel/assign",
+        "component": "/_shared/placeholder",
+        "icon": "lucide:share-2",
+        "authCode": "channel:assign",
+        "type": 1,
+        "sort": 4
+      }
+    ]
+  },
+  {
+    "name": "Site",
+    "title": "站点管理",
+    "path": "/site",
+    "icon": "lucide:globe",
+    "type": 0,
+    "sort": 80,
+    "children": [
+      {
+        "name": "SiteAManage",
+        "title": "A站管理",
+        "path": "/site/site-a",
+        "component": "/_shared/placeholder",
+        "icon": "lucide:monitor",
+        "authCode": "site:siteA",
+        "type": 1,
+        "sort": 1
+      },
+      {
+        "name": "SiteBManage",
+        "title": "B站管理",
+        "path": "/site/site-b",
+        "component": "/_shared/placeholder",
+        "icon": "lucide:monitor-smartphone",
+        "authCode": "site:siteB",
+        "type": 1,
+        "sort": 2
+      },
+      {
+        "name": "StripeWordBank",
+        "title": "Stripe单词库",
+        "path": "/site/stripe-wordbank",
+        "component": "/_shared/placeholder",
+        "icon": "lucide:book-text",
+        "authCode": "site:stripeWordBank",
+        "type": 1,
+        "sort": 3
+      }
+    ]
+  },
+  {
     "name": "Permission",
     "title": "权限管理",
     "path": "/permission",
