@@ -27,6 +27,36 @@
     ]
   },
   {
+    "name": "Merchant",
+    "title": "商户管理",
+    "path": "/merchant",
+    "icon": "lucide:handshake",
+    "type": 0,
+    "sort": 20,
+    "children": [
+      {
+        "name": "MerchantList",
+        "title": "商户列表",
+        "path": "/merchant/list",
+        "component": "/merchant/list/index",
+        "icon": "lucide:users",
+        "authCode": "merchant:list",
+        "type": 1,
+        "sort": 1
+      },
+      {
+        "name": "MerchantGroup",
+        "title": "商户分组",
+        "path": "/merchant/group",
+        "component": "/_shared/placeholder",
+        "icon": "lucide:folders",
+        "authCode": "merchant:group",
+        "type": 1,
+        "sort": 2
+      }
+    ]
+  },
+  {
     "name": "Channel",
     "title": "通道管理",
     "path": "/channel",
