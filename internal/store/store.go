@@ -155,6 +155,19 @@ func (s *MySQLStore) FindMenuByName(name string) (*model.Menu, error) {
 	return &menu, nil
 }
 
+// GetMenuByID 按主键查询菜单。
+func (s *MySQLStore) GetMenuByID(id uint) (*model.Menu, error) {
+	var menu model.Menu
+	tx := s.db.Where("id = ?", id).Limit(1).Find(&menu)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return nil, ErrNotFound
+	}
+	return &menu, nil
+}
+
 // ListMenus 查询全部启用中的菜单。
 func (s *MySQLStore) ListMenus() ([]model.Menu, error) {
 	var menus []model.Menu
@@ -164,9 +177,62 @@ func (s *MySQLStore) ListMenus() ([]model.Menu, error) {
 	return menus, err
 }
 
+// ListAllMenus 查询全部菜单（含禁用），菜单管理页用。
+func (s *MySQLStore) ListAllMenus() ([]model.Menu, error) {
+	var menus []model.Menu
+	err := s.db.Order("sort ASC, id ASC").Find(&menus).Error
+	return menus, err
+}
+
 // SaveMenu 更新菜单字段。
 func (s *MySQLStore) SaveMenu(menu *model.Menu) error {
 	return s.db.Save(menu).Error
+}
+
+// DeleteMenu 按主键删除菜单。
+func (s *MySQLStore) DeleteMenu(id uint) error {
+	return s.db.Delete(&model.Menu{}, id).Error
+}
+
+// CountMenusByParentID 统计某父菜单下的子菜单数量。
+func (s *MySQLStore) CountMenusByParentID(parentID uint) (int64, error) {
+	var count int64
+	err := s.db.Model(&model.Menu{}).Where("parent_id = ?", parentID).Count(&count).Error
+	return count, err
+}
+
+// DeleteRoleMenusByMenuID 删除某菜单的全部角色绑定。
+func (s *MySQLStore) DeleteRoleMenusByMenuID(menuID uint) error {
+	return s.db.Where("menu_id = ?", menuID).Delete(&model.RoleMenu{}).Error
+}
+
+// MenuNameExists 判断路由 Name 是否已被占用。excludeID>0 时排除自身（编辑用）。
+func (s *MySQLStore) MenuNameExists(name string, excludeID uint) (bool, error) {
+	q := s.db.Model(&model.Menu{}).Where("name = ?", name)
+	if excludeID > 0 {
+		q = q.Where("id <> ?", excludeID)
+	}
+	var count int64
+	if err := q.Count(&count).Error; err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+// MenuPathExists 判断路径是否已被占用。空路径不算；excludeID>0 时排除自身。
+func (s *MySQLStore) MenuPathExists(path string, excludeID uint) (bool, error) {
+	if path == "" {
+		return false, nil
+	}
+	q := s.db.Model(&model.Menu{}).Where("path = ?", path)
+	if excludeID > 0 {
+		q = q.Where("id <> ?", excludeID)
+	}
+	var count int64
+	if err := q.Count(&count).Error; err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }
 
 // EnsureRoleMenu 给角色绑定菜单，已存在则不重复插入。
@@ -186,4 +252,11 @@ func (s *MySQLStore) ListMenusByUserID(userID uint) ([]model.Menu, error) {
 		Order("menus.sort ASC, menus.id ASC").
 		Find(&menus).Error
 	return menus, err
+}
+
+// ListRoles 查询全部角色。
+func (s *MySQLStore) ListRoles() ([]model.Role, error) {
+	var roles []model.Role
+	err := s.db.Order("id ASC").Find(&roles).Error
+	return roles, err
 }

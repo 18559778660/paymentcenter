@@ -124,6 +124,20 @@ func (a *App) ensureMenus(seeds []menuSeed) ([]uint, error) {
 				if err := a.store.SaveMenu(menu); err != nil {
 					return err
 				}
+			} else if menu.Component == "/_shared/placeholder" &&
+				item.Component != "" &&
+				item.Component != menu.Component {
+				// 占位页升级为真实页面时，只更新 component
+				menu.Component = item.Component
+				if err := a.store.SaveMenu(menu); err != nil {
+					return err
+				}
+			} else if item.Type == model.MenuTypeDir && menu.Type != model.MenuTypeDir {
+				// 种子是目录但库里被标成菜单时，只纠正 type
+				menu.Type = model.MenuTypeDir
+				if err := a.store.SaveMenu(menu); err != nil {
+					return err
+				}
 			}
 			ids = append(ids, menu.ID)
 			if err := walk(menu.ID, item.Children); err != nil {

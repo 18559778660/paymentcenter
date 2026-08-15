@@ -148,7 +148,7 @@
         "name": "PermissionMenu",
         "title": "菜单管理",
         "path": "/permission/menu",
-        "component": "/_shared/placeholder",
+        "component": "/permission/menu/index",
         "icon": "lucide:menu",
         "authCode": "system:menu:list",
         "type": 1,

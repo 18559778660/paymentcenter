@@ -20,6 +20,7 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 
 	healthController := controller.NewHealthController(cfg)
 	authController := controller.NewAuthController(app)
+	menuController := controller.NewMenuController(app)
 	orderController := controller.NewOrderController(app)
 
 	api := r.Group("/api")
@@ -31,12 +32,25 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 		authed := api.Group("")
 		authed.Use(middleware.Auth(app))
 		{
+			// 用户信息
 			authed.GET("/user/info", authController.UserInfo)
+			// 用户权限码
 			authed.GET("/auth/codes", authController.Codes)
+			// 用户菜单
 			authed.GET("/menu/all", authController.Menus)
 
+			// 菜单管理
+			authed.GET("/system/menu/list", menuController.List)
+			authed.GET("/system/menu/name-exists", menuController.NameExists)
+			authed.GET("/system/menu/path-exists", menuController.PathExists)
+			authed.POST("/system/menu", menuController.Create)
+			authed.PUT("/system/menu/:id", menuController.Update)
+			authed.DELETE("/system/menu/:id", menuController.Delete)
+
+			// 健康检查
 			authed.GET("/health", healthController.Health)
 
+			// 订单管理
 			authed.POST("/orders", orderController.Create)
 			authed.GET("/orders", orderController.List)
 			authed.GET("/orders/:id", orderController.Get)

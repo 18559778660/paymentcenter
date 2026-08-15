@@ -21,10 +21,18 @@ type Store interface {
 	EnsureUserRole(userID, roleID uint) error
 	CreateMenu(menu *model.Menu) error
 	FindMenuByName(name string) (*model.Menu, error)
+	GetMenuByID(id uint) (*model.Menu, error)
 	ListMenus() ([]model.Menu, error)
+	ListAllMenus() ([]model.Menu, error)
 	SaveMenu(menu *model.Menu) error
+	DeleteMenu(id uint) error
+	CountMenusByParentID(parentID uint) (int64, error)
+	DeleteRoleMenusByMenuID(menuID uint) error
+	MenuNameExists(name string, excludeID uint) (bool, error)
+	MenuPathExists(path string, excludeID uint) (bool, error)
 	EnsureRoleMenu(roleID, menuID uint) error
 	ListMenusByUserID(userID uint) ([]model.Menu, error)
+	ListRoles() ([]model.Role, error)
 }
 
 // App 业务层入口。各业务方法拆在同包的 auth.go / menu.go / order.go / seed.go。
