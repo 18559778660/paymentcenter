@@ -1,0 +1,65 @@
+[
+  {
+    "name": "Dashboard",
+    "title": "首页",
+    "path": "/dashboard",
+    "icon": "lucide:home",
+    "type": 0,
+    "sort": -1,
+    "hideChildrenInMenu": true,
+    "children": [
+      {
+        "name": "Analytics",
+        "title": "首页",
+        "path": "/dashboard/analytics",
+        "component": "/dashboard/analytics/index",
+        "icon": "lucide:home",
+        "authCode": "dashboard:view",
+        "type": 1,
+        "sort": 1,
+        "hideInMenu": true,
+        "affixTab": true
+      }
+    ]
+  },
+  {
+    "name": "Permission",
+    "title": "权限管理",
+    "path": "/permission",
+    "icon": "lucide:key",
+    "type": 0,
+    "sort": 110,
+    "children": [
+      {
+        "name": "PermissionUser",
+        "title": "用户管理",
+        "path": "/permission/user",
+        "component": "/_shared/placeholder",
+        "icon": "lucide:user",
+        "authCode": "system:user:list",
+        "type": 1,
+        "sort": 1
+      },
+      {
+        "name": "PermissionRole",
+        "title": "角色管理",
+        "path": "/permission/role",
+        "component": "/_shared/placeholder",
+        "icon": "lucide:users-round",
+        "authCode": "system:role:list",
+        "type": 1,
+        "sort": 2
+      },
+      {
+        "name": "PermissionMenu",
+        "title": "菜单管理",
+        "path": "/permission/menu",
+        "component": "/_shared/placeholder",
+        "icon": "lucide:menu",
+        "authCode": "system:menu:list",
+        "type": 1,
+        "sort": 3
+      }
+    ]
+  }
+]

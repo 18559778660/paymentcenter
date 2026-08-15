@@ -1,23 +1,32 @@
 package service
 
 import (
+	_ "embed"
+	"encoding/json"
+	"fmt"
+
 	"paymentcenter/internal/model"
 )
 
+// menusJSON 内置菜单种子，改菜单编辑 menus.json 即可。type：0目录 1菜单 2按钮。
+//
+//go:embed menus.json
+var menusJSON []byte
+
 // menuSeed 初始化菜单用的内存结构，启动时写入 menus 表。
 type menuSeed struct {
-	Name               string     // 路由 Name，需唯一
-	Title              string     // 显示标题
-	Path               string     // 前端路径
-	Component          string     // 前端组件路径
-	Icon               string     // 图标
-	AuthCode           string     // 权限码
-	Type               int        // 0目录 1菜单 2按钮
-	Sort               int        // 排序
-	HideInMenu         bool       // 不在侧边栏显示
-	HideChildrenInMenu bool       // 侧边栏不展开子菜单
-	AffixTab           bool       // 标签栏钉住
-	Children           []menuSeed // 子菜单
+	Name               string     `json:"name"`               // 路由 Name，需唯一
+	Title              string     `json:"title"`              // 显示标题
+	Path               string     `json:"path"`               // 前端路径
+	Component          string     `json:"component"`          // 前端组件路径
+	Icon               string     `json:"icon"`               // 图标
+	AuthCode           string     `json:"authCode"`           // 权限码
+	Type               int        `json:"type"`               // 0目录 1菜单 2按钮
+	Sort               int        `json:"sort"`               // 排序
+	HideInMenu         bool       `json:"hideInMenu"`         // 不在侧边栏显示
+	HideChildrenInMenu bool       `json:"hideChildrenInMenu"` // 侧边栏不展开子菜单
+	AffixTab           bool       `json:"affixTab"`           // 标签栏钉住
+	Children           []menuSeed `json:"children"`           // 子菜单
 }
 
 // SeedRBAC 启动时幂等初始化角色、菜单、默认管理员。已存在的数据不会覆盖。
@@ -31,7 +40,11 @@ func (a *App) SeedRBAC(adminUsername, adminPassword string) error {
 		return err
 	}
 
-	menuIDs, err := a.ensureMenus(rbacMenuTree())
+	seeds, err := loadMenuSeeds()
+	if err != nil {
+		return err
+	}
+	menuIDs, err := a.ensureMenus(seeds)
 	if err != nil {
 		return err
 	}
@@ -139,43 +152,13 @@ func (a *App) ensureAdminUser(username, password string, superRoleID uint) error
 	return a.store.EnsureUserRole(user.ID, superRoleID)
 }
 
-// rbacMenuTree 内置菜单树：首页 + 权限管理。后续业务菜单再往这里加。
-func rbacMenuTree() []menuSeed {
-	return []menuSeed{
-		{
-			Name: "Dashboard", Title: "首页", Path: "/dashboard", Icon: "lucide:home",
-			Type: model.MenuTypeDir, Sort: -1, HideChildrenInMenu: true,
-			Children: []menuSeed{
-				{
-					Name: "Analytics", Title: "首页", Path: "/dashboard/analytics",
-					Component: "/dashboard/analytics/index", Icon: "lucide:home",
-					AuthCode: "dashboard:view", Type: model.MenuTypeMenu, Sort: 1,
-					HideInMenu: true, AffixTab: true,
-				},
-			},
-		},
-		{
-			Name: "Permission", Title: "权限管理", Path: "/permission", Icon: "lucide:key",
-			Type: model.MenuTypeDir, Sort: 110,
-			Children: []menuSeed{
-				{
-					Name: "PermissionUser", Title: "用户管理", Path: "/permission/user",
-					Component: "/_shared/placeholder", Icon: "lucide:user",
-					AuthCode: "system:user:list", Type: model.MenuTypeMenu, Sort: 1,
-				},
-				{
-					Name: "PermissionRole", Title: "角色管理", Path: "/permission/role",
-					Component: "/_shared/placeholder", Icon: "lucide:users-round",
-					AuthCode: "system:role:list", Type: model.MenuTypeMenu, Sort: 2,
-				},
-				{
-					Name: "PermissionMenu", Title: "菜单管理", Path: "/permission/menu",
-					Component: "/_shared/placeholder", Icon: "lucide:menu",
-					AuthCode: "system:menu:list", Type: model.MenuTypeMenu, Sort: 3,
-				},
-			},
-		},
+// loadMenuSeeds 读取 menus.json。只给库里还不存在的菜单做插入。
+func loadMenuSeeds() ([]menuSeed, error) {
+	var seeds []menuSeed
+	if err := json.Unmarshal(menusJSON, &seeds); err != nil {
+		return nil, fmt.Errorf("parse menus.json: %w", err)
 	}
+	return seeds, nil
 }
 
 // EnsureDefaultAdmin 启动入口调用，内部转到 SeedRBAC。
