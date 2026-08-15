@@ -25,13 +25,14 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 	api := r.Group("/api")
 	{
 		api.POST("/auth/login", authController.Login)
+		// 退出不校验 token：前端可能已清本地 token，或 token 已过期，仍应能成功退出
+		api.POST("/auth/logout", authController.Logout)
 
 		authed := api.Group("")
 		authed.Use(middleware.Auth(app))
 		{
 			authed.GET("/user/info", authController.UserInfo)
 			authed.GET("/auth/codes", authController.Codes)
-			authed.POST("/auth/logout", authController.Logout)
 			authed.GET("/menu/all", authController.Menus)
 
 			authed.GET("/health", healthController.Health)
