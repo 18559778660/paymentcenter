@@ -94,3 +94,33 @@ func (m *MerchantController) Create(c *gin.Context) {
 	}
 	response.SuccessMsg(c, item, "created")
 }
+
+// SetStar 设置商户星标。
+func (m *MerchantController) SetStar(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil || id == 0 {
+		response.Fail(c, "参数错误")
+		return
+	}
+	var req struct {
+		Starred bool `json:"starred"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, "参数错误")
+		return
+	}
+	operator := "system"
+	if user, ok := middleware.CurrentUser(c); ok {
+		operator = user.Username
+	}
+	item, err := m.app.SetMerchantStarred(uint(id), req.Starred, operator)
+	if err != nil {
+		if errors.Is(err, service.ErrMerchantNotFound) {
+			response.Fail(c, "商户不存在")
+			return
+		}
+		response.Fail(c, err.Error())
+		return
+	}
+	response.Success(c, item)
+}

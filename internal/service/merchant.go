@@ -17,6 +17,7 @@ var (
 	ErrMerchantNameExists    = errors.New("merchant name exists")
 	ErrMerchantNameInvalid   = errors.New("merchant name invalid")
 	ErrMerchantParentInvalid = errors.New("merchant parent invalid")
+	ErrMerchantNotFound      = errors.New("merchant not found")
 )
 
 var merchantNamePattern = regexp.MustCompile(`^[a-zA-Z0-9-]+$`)
@@ -214,6 +215,24 @@ func (a *App) CreateMerchant(req CreateMerchantRequest, operator string) (*Merch
 		return nil, err
 	}
 
+	item := toMerchantListItem(*merchant, map[uint]string{})
+	return &item, nil
+}
+
+// SetMerchantStarred 设置商户星标。
+func (a *App) SetMerchantStarred(id uint, starred bool, operator string) (*MerchantListItem, error) {
+	merchant, err := a.store.GetMerchantByID(id)
+	if err != nil {
+		if isNotFound(err) {
+			return nil, ErrMerchantNotFound
+		}
+		return nil, err
+	}
+	merchant.Starred = starred
+	merchant.UpdatedBy = operator
+	if err := a.store.SaveMerchant(merchant); err != nil {
+		return nil, err
+	}
 	item := toMerchantListItem(*merchant, map[uint]string{})
 	return &item, nil
 }

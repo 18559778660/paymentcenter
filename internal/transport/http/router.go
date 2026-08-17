@@ -52,6 +52,7 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 			authed.GET("/merchants", merchantController.List)
 			authed.GET("/merchants/options", merchantController.Options)
 			authed.POST("/merchants", merchantController.Create)
+			authed.PUT("/merchants/:id/star", merchantController.SetStar)
 
 			// 健康检查
 			authed.GET("/health", healthController.Health)
