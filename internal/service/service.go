@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"paymentcenter/internal/model"
+	"paymentcenter/internal/store"
 )
 
 // Store 数据访问接口。service 只依赖这个抽象，不直接碰数据库。
@@ -33,6 +34,14 @@ type Store interface {
 	EnsureRoleMenu(roleID, menuID uint) error
 	ListMenusByUserID(userID uint) ([]model.Menu, error)
 	ListRoles() ([]model.Role, error)
+	CreateMerchant(m *model.Merchant) error
+	SaveMerchant(m *model.Merchant) error
+	GetMerchantByID(id uint) (*model.Merchant, error)
+	FindMerchantByName(name string) (*model.Merchant, error)
+	FindMerchantByAccount(account string) (*model.Merchant, error)
+	MaxWINMerchantAccountSeq() (int, error)
+	ListMerchants(filter store.MerchantListFilter) ([]model.Merchant, error)
+	ListMerchantOptions() ([]model.Merchant, error)
 }
 
 // App 业务层入口。各业务方法拆在同包的 auth.go / menu.go / order.go / seed.go。

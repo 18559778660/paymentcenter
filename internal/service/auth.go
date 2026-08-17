@@ -65,7 +65,7 @@ type tokenPayload struct {
 
 // Login 校验账号密码，签发 accessToken，并更新最后登录时间。
 func (a *App) Login(req LoginRequest) (LoginResponse, error) {
-	user, err := a.store.FindUserByUsername(req.Username)
+	user, err := a.store.FindUserByUsername(strings.TrimSpace(req.Username))
 	if err != nil {
 		return LoginResponse{}, ErrInvalidCredentials
 	}

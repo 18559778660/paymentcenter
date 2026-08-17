@@ -21,6 +21,7 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 	healthController := controller.NewHealthController(cfg)
 	authController := controller.NewAuthController(app)
 	menuController := controller.NewMenuController(app)
+	merchantController := controller.NewMerchantController(app)
 	orderController := controller.NewOrderController(app)
 
 	api := r.Group("/api")
@@ -46,6 +47,11 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 			authed.POST("/system/menu", menuController.Create)
 			authed.PUT("/system/menu/:id", menuController.Update)
 			authed.DELETE("/system/menu/:id", menuController.Delete)
+
+			// 商户管理
+			authed.GET("/merchants", merchantController.List)
+			authed.GET("/merchants/options", merchantController.Options)
+			authed.POST("/merchants", merchantController.Create)
 
 			// 健康检查
 			authed.GET("/health", healthController.Health)

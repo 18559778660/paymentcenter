@@ -46,6 +46,10 @@ func (a *App) SeedRBAC(adminUsername, adminPassword string) error {
 	if err != nil {
 		return err
 	}
+	merchantRole, err := a.ensureRole("merchant", "商户", "商户后台账号")
+	if err != nil {
+		return err
+	}
 
 	seeds, err := loadMenuSeeds()
 	if err != nil {
@@ -60,6 +64,17 @@ func (a *App) SeedRBAC(adminUsername, adminPassword string) error {
 			return err
 		}
 		if err := a.store.EnsureRoleMenu(adminRole.ID, menuID); err != nil {
+			return err
+		}
+	}
+	// 商户角色先开放首页，后续可按业务再扩
+	if dashboard, err := a.store.FindMenuByName("Dashboard"); err == nil {
+		if err := a.store.EnsureRoleMenu(merchantRole.ID, dashboard.ID); err != nil {
+			return err
+		}
+	}
+	if analytics, err := a.store.FindMenuByName("Analytics"); err == nil {
+		if err := a.store.EnsureRoleMenu(merchantRole.ID, analytics.ID); err != nil {
 			return err
 		}
 	}
@@ -168,6 +183,7 @@ func (a *App) ensureAdminUser(username, password string, superRoleID uint) error
 			PasswordHash: hash,
 			RealName:     "管理员",
 			HomePath:     "/dashboard/analytics",
+			Type:         model.UserTypeAdmin,
 			Status:       model.UserStatusEnabled,
 		}
 		if err := a.store.CreateUser(user); err != nil {

@@ -1,6 +1,8 @@
 package store
 
 import (
+	"fmt"
+
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
@@ -25,6 +27,7 @@ func NewMySQLStore(dsn string) (*MySQLStore, error) {
 		&model.Menu{},
 		&model.UserRole{},
 		&model.RoleMenu{},
+		&model.Merchant{},
 	); err != nil {
 		return nil, err
 	}
@@ -259,4 +262,115 @@ func (s *MySQLStore) ListRoles() ([]model.Role, error) {
 	var roles []model.Role
 	err := s.db.Order("id ASC").Find(&roles).Error
 	return roles, err
+}
+
+// CreateMerchant 插入商户资料。
+func (s *MySQLStore) CreateMerchant(m *model.Merchant) error {
+	return s.db.Create(m).Error
+}
+
+// SaveMerchant 更新商户资料。
+func (s *MySQLStore) SaveMerchant(m *model.Merchant) error {
+	return s.db.Save(m).Error
+}
+
+// GetMerchantByID 按主键查商户。
+func (s *MySQLStore) GetMerchantByID(id uint) (*model.Merchant, error) {
+	var m model.Merchant
+	tx := s.db.Where("id = ?", id).Limit(1).Find(&m)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return nil, ErrNotFound
+	}
+	return &m, nil
+}
+
+// FindMerchantByName 按商户名查询。
+func (s *MySQLStore) FindMerchantByName(name string) (*model.Merchant, error) {
+	var m model.Merchant
+	tx := s.db.Where("name = ?", name).Limit(1).Find(&m)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return nil, ErrNotFound
+	}
+	return &m, nil
+}
+
+// FindMerchantByAccount 按登录账号查询。
+func (s *MySQLStore) FindMerchantByAccount(account string) (*model.Merchant, error) {
+	var m model.Merchant
+	tx := s.db.Where("account = ?", account).Limit(1).Find(&m)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return nil, ErrNotFound
+	}
+	return &m, nil
+}
+
+// MaxWINMerchantAccountSeq 取已有 WIN##### 账号中的最大序号；没有则返回 -1。
+// 账号定长递增，按 account 倒序取一条即可。
+func (s *MySQLStore) MaxWINMerchantAccountSeq() (int, error) {
+	var account string
+	tx := s.db.Model(&model.Merchant{}).
+		Select("account").
+		Where("account LIKE ?", "WIN_____").
+		Order("account DESC").
+		Limit(1).
+		Scan(&account)
+	if tx.Error != nil {
+		return -1, tx.Error
+	}
+	if account == "" {
+		return -1, nil
+	}
+	var n int
+	if _, err := fmt.Sscanf(account[3:], "%d", &n); err != nil {
+		return -1, nil
+	}
+	return n, nil
+}
+
+// MerchantListFilter 商户列表筛选条件。
+type MerchantListFilter struct {
+	Name             string
+	ParentID         *uint
+	Status           *int
+	HoldStatus       *int
+	MutualHoldStatus *int
+}
+
+// ListMerchants 按条件查询商户，按 id 倒序。
+func (s *MySQLStore) ListMerchants(filter MerchantListFilter) ([]model.Merchant, error) {
+	q := s.db.Model(&model.Merchant{})
+	if filter.Name != "" {
+		q = q.Where("name LIKE ?", "%"+filter.Name+"%")
+	}
+	if filter.ParentID != nil {
+		q = q.Where("parent_id = ?", *filter.ParentID)
+	}
+	if filter.Status != nil {
+		q = q.Where("status = ?", *filter.Status)
+	}
+	if filter.HoldStatus != nil {
+		q = q.Where("hold_status = ?", *filter.HoldStatus)
+	}
+	if filter.MutualHoldStatus != nil {
+		q = q.Where("mutual_hold_status = ?", *filter.MutualHoldStatus)
+	}
+	var list []model.Merchant
+	err := q.Order("id DESC").Find(&list).Error
+	return list, err
+}
+
+// ListMerchantOptions 上级下拉用：返回全部商户简要信息。
+func (s *MySQLStore) ListMerchantOptions() ([]model.Merchant, error) {
+	var list []model.Merchant
+	err := s.db.Select("id", "name", "account").Order("id DESC").Find(&list).Error
+	return list, err
 }
