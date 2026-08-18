@@ -166,6 +166,7 @@ func (a *App) DeleteMerchantGroup(id uint) error {
 	return a.store.DeleteMerchantGroup(id)
 }
 
+// getMerchantGroupItem 获取商户分组列表项。
 func (a *App) getMerchantGroupItem(id uint) (*MerchantGroupListItem, error) {
 	list, err := a.ListMerchantGroups(MerchantGroupListQuery{ID: &id})
 	if err != nil {
@@ -178,6 +179,7 @@ func (a *App) getMerchantGroupItem(id uint) (*MerchantGroupListItem, error) {
 	return &item, nil
 }
 
+// normalizeGroupMerchantIDs 规范化商户分组成员 ID 列表。
 func (a *App) normalizeGroupMerchantIDs(ids []uint) ([]uint, error) {
 	uniq := make([]uint, 0, len(ids))
 	seen := map[uint]struct{}{}
@@ -204,6 +206,7 @@ func (a *App) normalizeGroupMerchantIDs(ids []uint) ([]uint, error) {
 	return uniq, nil
 }
 
+// normalizeMerchantGroupName 规范化商户分组名。
 func normalizeMerchantGroupName(raw string) (string, error) {
 	name := strings.TrimSpace(raw)
 	if name == "" || len([]rune(name)) > 64 {
@@ -212,6 +215,7 @@ func normalizeMerchantGroupName(raw string) (string, error) {
 	return name, nil
 }
 
+// toMerchantGroupListItem 转换为商户分组列表项。
 func toMerchantGroupListItem(g model.MerchantGroup, merchantIDs []uint, merchantByID map[uint]model.Merchant) MerchantGroupListItem {
 	merchants := make([]MerchantGroupMerchant, 0, len(merchantIDs))
 	for _, id := range merchantIDs {
