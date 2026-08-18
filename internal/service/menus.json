@@ -48,7 +48,7 @@
         "name": "MerchantGroup",
         "title": "商户分组",
         "path": "/merchant/group",
-        "component": "/_shared/placeholder",
+        "component": "/merchant/group/index",
         "icon": "lucide:folders",
         "authCode": "merchant:group",
         "type": 1,

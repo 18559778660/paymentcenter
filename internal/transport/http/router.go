@@ -26,6 +26,7 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 	authController := controller.NewAuthController(app)
 	menuController := controller.NewMenuController(app)
 	merchantController := controller.NewMerchantController(app)
+	merchantGroupController := controller.NewMerchantGroupController(app)
 	orderController := controller.NewOrderController(app)
 
 	api := r.Group("/api")
@@ -60,6 +61,12 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 			authed.PUT("/merchants/:id/star", merchantController.SetStar)
 			authed.PUT("/merchants/:id/status", merchantController.SetStatus)
 			authed.POST("/upload/avatar", merchantController.UploadAvatar)
+
+			// 商户分组
+			authed.GET("/merchant-groups", merchantGroupController.List)
+			authed.POST("/merchant-groups", merchantGroupController.Create)
+			authed.PUT("/merchant-groups/:id", merchantGroupController.Update)
+			authed.DELETE("/merchant-groups/:id", merchantGroupController.Delete)
 
 			// 健康检查
 			authed.GET("/health", healthController.Health)

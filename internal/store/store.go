@@ -28,6 +28,8 @@ func NewMySQLStore(dsn string) (*MySQLStore, error) {
 		&model.UserRole{},
 		&model.RoleMenu{},
 		&model.Merchant{},
+		&model.MerchantGroup{},
+		&model.MerchantGroupMember{},
 	); err != nil {
 		return nil, err
 	}
@@ -383,4 +385,110 @@ func (s *MySQLStore) ListMerchantOptions() ([]model.Merchant, error) {
 	var list []model.Merchant
 	err := s.db.Select("id", "name", "account").Order("id DESC").Find(&list).Error
 	return list, err
+}
+
+// GetMerchantsByIDs 按主键批量查商户。
+func (s *MySQLStore) GetMerchantsByIDs(ids []uint) ([]model.Merchant, error) {
+	if len(ids) == 0 {
+		return []model.Merchant{}, nil
+	}
+	var list []model.Merchant
+	err := s.db.Where("id IN ?", ids).Find(&list).Error
+	return list, err
+}
+
+// MerchantGroupListFilter 分组列表筛选。
+type MerchantGroupListFilter struct {
+	ID   *uint
+	Name string
+}
+
+// CreateMerchantGroup 插入分组。
+func (s *MySQLStore) CreateMerchantGroup(g *model.MerchantGroup) error {
+	return s.db.Create(g).Error
+}
+
+// SaveMerchantGroup 更新分组。
+func (s *MySQLStore) SaveMerchantGroup(g *model.MerchantGroup) error {
+	return s.db.Save(g).Error
+}
+
+// GetMerchantGroupByID 按主键查分组。
+func (s *MySQLStore) GetMerchantGroupByID(id uint) (*model.MerchantGroup, error) {
+	var g model.MerchantGroup
+	tx := s.db.Where("id = ?", id).Limit(1).Find(&g)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return nil, ErrNotFound
+	}
+	return &g, nil
+}
+
+// FindMerchantGroupByName 按分组名查询。
+func (s *MySQLStore) FindMerchantGroupByName(name string) (*model.MerchantGroup, error) {
+	var g model.MerchantGroup
+	tx := s.db.Where("name = ?", name).Limit(1).Find(&g)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return nil, ErrNotFound
+	}
+	return &g, nil
+}
+
+// ListMerchantGroups 按条件查询分组，按 id 倒序。
+func (s *MySQLStore) ListMerchantGroups(filter MerchantGroupListFilter) ([]model.MerchantGroup, error) {
+	q := s.db.Model(&model.MerchantGroup{})
+	if filter.ID != nil {
+		q = q.Where("id = ?", *filter.ID)
+	}
+	if filter.Name != "" {
+		q = q.Where("name LIKE ?", "%"+filter.Name+"%")
+	}
+	var list []model.MerchantGroup
+	err := q.Order("id DESC").Find(&list).Error
+	return list, err
+}
+
+// DeleteMerchantGroup 删除分组及其成员关系。
+func (s *MySQLStore) DeleteMerchantGroup(id uint) error {
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("group_id = ?", id).Delete(&model.MerchantGroupMember{}).Error; err != nil {
+			return err
+		}
+		return tx.Where("id = ?", id).Delete(&model.MerchantGroup{}).Error
+	})
+}
+
+// ListMerchantGroupMembers 查出若干分组下的商户 ID。
+func (s *MySQLStore) ListMerchantGroupMembers(groupIDs []uint) ([]model.MerchantGroupMember, error) {
+	if len(groupIDs) == 0 {
+		return []model.MerchantGroupMember{}, nil
+	}
+	var list []model.MerchantGroupMember
+	err := s.db.Where("group_id IN ?", groupIDs).Find(&list).Error
+	return list, err
+}
+
+// ReplaceMerchantGroupMembers 用新列表覆盖分组成员。
+func (s *MySQLStore) ReplaceMerchantGroupMembers(groupID uint, merchantIDs []uint) error {
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("group_id = ?", groupID).Delete(&model.MerchantGroupMember{}).Error; err != nil {
+			return err
+		}
+		if len(merchantIDs) == 0 {
+			return nil
+		}
+		rows := make([]model.MerchantGroupMember, 0, len(merchantIDs))
+		for _, merchantID := range merchantIDs {
+			rows = append(rows, model.MerchantGroupMember{
+				GroupID:    groupID,
+				MerchantID: merchantID,
+			})
+		}
+		return tx.Create(&rows).Error
+	})
 }

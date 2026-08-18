@@ -43,6 +43,15 @@ type Store interface {
 	MaxWINMerchantAccountSeq() (int, error)
 	ListMerchants(filter store.MerchantListFilter) ([]model.Merchant, error)
 	ListMerchantOptions() ([]model.Merchant, error)
+	GetMerchantsByIDs(ids []uint) ([]model.Merchant, error)
+	CreateMerchantGroup(g *model.MerchantGroup) error
+	SaveMerchantGroup(g *model.MerchantGroup) error
+	GetMerchantGroupByID(id uint) (*model.MerchantGroup, error)
+	FindMerchantGroupByName(name string) (*model.MerchantGroup, error)
+	ListMerchantGroups(filter store.MerchantGroupListFilter) ([]model.MerchantGroup, error)
+	DeleteMerchantGroup(id uint) error
+	ListMerchantGroupMembers(groupIDs []uint) ([]model.MerchantGroupMember, error)
+	ReplaceMerchantGroupMembers(groupID uint, merchantIDs []uint) error
 }
 
 // App 业务层入口。各业务方法拆在同包的 auth.go / menu.go / order.go / seed.go。
