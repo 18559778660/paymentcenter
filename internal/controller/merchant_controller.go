@@ -2,7 +2,12 @@ package controller
 
 import (
 	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -153,4 +158,72 @@ func (m *MerchantController) SetStatus(c *gin.Context) {
 		return
 	}
 	response.Success(c, item)
+}
+
+// Update 编辑商户 / 用户信息。
+func (m *MerchantController) Update(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil || id == 0 {
+		response.Fail(c, "参数错误")
+		return
+	}
+	var req service.UpdateMerchantRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, "参数错误")
+		return
+	}
+	operator := "system"
+	if user, ok := middleware.CurrentUser(c); ok {
+		operator = user.Username
+	}
+	item, err := m.app.UpdateMerchant(uint(id), req, operator)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrMerchantNotFound):
+			response.Fail(c, "商户不存在")
+		case errors.Is(err, service.ErrMerchantNameInvalid):
+			response.Fail(c, "商户名可由英文字母、数字、- 组成")
+		case errors.Is(err, service.ErrMerchantNameExists):
+			response.Fail(c, "商户名已存在")
+		case errors.Is(err, service.ErrMerchantParentInvalid):
+			response.Fail(c, "上级商户无效")
+		case errors.Is(err, service.ErrMerchantPasswordInvalid):
+			response.Fail(c, "密码需为 6-20 位")
+		default:
+			response.Fail(c, err.Error())
+		}
+		return
+	}
+	response.Success(c, item)
+}
+
+// UploadAvatar 上传头像，返回可访问路径。
+func (m *MerchantController) UploadAvatar(c *gin.Context) {
+	file, err := c.FormFile("file")
+	if err != nil {
+		response.Fail(c, "请选择图片")
+		return
+	}
+	if file.Size > 2*1024*1024 {
+		response.Fail(c, "图片不能超过 2MB")
+		return
+	}
+	ext := strings.ToLower(filepath.Ext(file.Filename))
+	switch ext {
+	case ".jpg", ".jpeg", ".png", ".gif", ".webp":
+	default:
+		response.Fail(c, "仅支持 jpg/png/gif/webp")
+		return
+	}
+	if err := os.MkdirAll(filepath.Join("uploads", "avatars"), 0o755); err != nil {
+		response.Fail(c, "上传失败")
+		return
+	}
+	name := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
+	dst := filepath.Join("uploads", "avatars", name)
+	if err := c.SaveUploadedFile(file, dst); err != nil {
+		response.Fail(c, "上传失败")
+		return
+	}
+	response.Success(c, gin.H{"url": "/api/files/avatars/" + name})
 }

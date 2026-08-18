@@ -15,6 +15,7 @@ type Store interface {
 	CreateUser(user *model.User) error
 	SaveUser(user *model.User) error
 	GetUserByID(id uint) (*model.User, error)
+	GetUsersByIDs(ids []uint) ([]model.User, error)
 	FindUserByUsername(username string) (*model.User, error)
 	CreateRole(role *model.Role) error
 	FindRoleByCode(code string) (*model.Role, error)

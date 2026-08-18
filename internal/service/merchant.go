@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/big"
 	"regexp"
+	"strings"
 	"time"
 
 	"paymentcenter/internal/model"
@@ -18,6 +19,7 @@ var (
 	ErrMerchantNameInvalid   = errors.New("merchant name invalid")
 	ErrMerchantParentInvalid = errors.New("merchant parent invalid")
 	ErrMerchantNotFound      = errors.New("merchant not found")
+	ErrMerchantPasswordInvalid = errors.New("merchant password invalid")
 )
 
 var merchantNamePattern = regexp.MustCompile(`^[a-zA-Z0-9-]+$`)
@@ -43,6 +45,8 @@ type MerchantListItem struct {
 	SecretKey        string `json:"secretKey"`
 	AuditSiteA       string `json:"auditSiteA"`
 	Starred          bool   `json:"starred"`
+	Nickname         string `json:"nickname"`
+	Avatar           string `json:"avatar"`
 	CreatedBy        string `json:"createdBy"`
 	CreatedAt        string `json:"createdAt"`
 	UpdatedBy        string `json:"updatedBy"`
@@ -66,6 +70,22 @@ type CreateMerchantRequest struct {
 	ConfirmEmail   *int   `json:"confirmEmail"` // 1发送 0不发送
 	AuditSiteA     string `json:"auditSiteA"`
 	AutoShip       *bool  `json:"autoShip"`
+}
+
+// UpdateMerchantRequest 编辑商户 / 用户信息共用入参，未传的字段不改。
+type UpdateMerchantRequest struct {
+	Name           *string `json:"name"`
+	Contact        *string `json:"contact"`
+	ParentID       *uint   `json:"parentId"`
+	RateDiff       *int    `json:"rateDiff"`
+	HoldRate       *int    `json:"holdRate"`
+	MutualHoldRate *int    `json:"mutualHoldRate"`
+	ConfirmEmail   *int    `json:"confirmEmail"`
+	AuditSiteA     *string `json:"auditSiteA"`
+	AutoShip       *bool   `json:"autoShip"`
+	Nickname       *string `json:"nickname"`
+	Password       *string `json:"password"`
+	Avatar         *string `json:"avatar"`
 }
 
 // MerchantListQuery 列表查询参数。
@@ -104,9 +124,30 @@ func (a *App) ListMerchants(q MerchantListQuery) ([]MerchantListItem, error) {
 			parentNames[o.ID] = o.Name
 		}
 	}
+	userIDs := make([]uint, 0, len(list))
+	for _, m := range list {
+		if m.UserID > 0 {
+			userIDs = append(userIDs, m.UserID)
+		}
+	}
+	userByID := map[uint]model.User{}
+	if len(userIDs) > 0 {
+		users, err := a.store.GetUsersByIDs(userIDs)
+		if err != nil {
+			return nil, err
+		}
+		for _, u := range users {
+			userByID[u.ID] = u
+		}
+	}
 	items := make([]MerchantListItem, 0, len(list))
 	for _, m := range list {
-		items = append(items, toMerchantListItem(m, parentNames))
+		var user *model.User
+		if u, ok := userByID[m.UserID]; ok {
+			uu := u
+			user = &uu
+		}
+		items = append(items, toMerchantListItem(m, parentNames, user))
 	}
 	return items, nil
 }
@@ -215,7 +256,7 @@ func (a *App) CreateMerchant(req CreateMerchantRequest, operator string) (*Merch
 		return nil, err
 	}
 
-	item := toMerchantListItem(*merchant, map[uint]string{})
+	item := toMerchantListItem(*merchant, map[uint]string{}, user)
 	return &item, nil
 }
 
@@ -233,7 +274,7 @@ func (a *App) SetMerchantStarred(id uint, starred bool, operator string) (*Merch
 	if err := a.store.SaveMerchant(merchant); err != nil {
 		return nil, err
 	}
-	item := toMerchantListItem(*merchant, map[uint]string{})
+	item := toMerchantListItem(*merchant, map[uint]string{}, nil)
 	return &item, nil
 }
 
@@ -270,7 +311,128 @@ func (a *App) SetMerchantStatus(id uint, enabled bool, operator string) (*Mercha
 			}
 		}
 	}
-	item := toMerchantListItem(*merchant, map[uint]string{})
+	item := toMerchantListItem(*merchant, map[uint]string{}, nil)
+	return &item, nil
+}
+
+// UpdateMerchant 编辑商户资料和登录用户信息，未传字段保持原值。
+func (a *App) UpdateMerchant(id uint, req UpdateMerchantRequest, operator string) (*MerchantListItem, error) {
+	merchant, err := a.store.GetMerchantByID(id)
+	if err != nil {
+		if isNotFound(err) {
+			return nil, ErrMerchantNotFound
+		}
+		return nil, err
+	}
+
+	var user *model.User
+	if merchant.UserID > 0 {
+		user, err = a.store.GetUserByID(merchant.UserID)
+		if err != nil && !isNotFound(err) {
+			return nil, err
+		}
+	}
+
+	needSaveUser := false
+	displayName := req.Name
+	if req.Nickname != nil {
+		displayName = req.Nickname
+	}
+	if displayName != nil {
+		if err := a.applyMerchantDisplayName(merchant, user, *displayName); err != nil {
+			return nil, err
+		}
+		if user != nil {
+			needSaveUser = true
+		}
+	}
+	if req.Contact != nil {
+		merchant.Contact = strings.TrimSpace(*req.Contact)
+	}
+	if req.ParentID != nil {
+		if *req.ParentID == 0 {
+			merchant.ParentID = nil
+		} else {
+			if *req.ParentID == merchant.ID {
+				return nil, ErrMerchantParentInvalid
+			}
+			parent, err := a.store.GetMerchantByID(*req.ParentID)
+			if err != nil {
+				if isNotFound(err) {
+					return nil, ErrMerchantParentInvalid
+				}
+				return nil, err
+			}
+			merchant.ParentID = &parent.ID
+		}
+	}
+	if req.RateDiff != nil {
+		if *req.RateDiff < 0 || *req.RateDiff > 100 {
+			return nil, fmt.Errorf("rateDiff must be 0~100")
+		}
+		merchant.RateDiff = *req.RateDiff
+	}
+	if req.HoldRate != nil {
+		merchant.HoldRate = *req.HoldRate
+		if merchant.HoldRate > 0 {
+			merchant.HoldStatus = 1
+		} else {
+			merchant.HoldStatus = 0
+		}
+	}
+	if req.MutualHoldRate != nil {
+		merchant.MutualHoldRate = *req.MutualHoldRate
+		if merchant.MutualHoldRate > 0 {
+			merchant.MutualHoldStatus = 1
+		} else {
+			merchant.MutualHoldStatus = 0
+		}
+	}
+	if req.ConfirmEmail != nil {
+		merchant.ConfirmEmail = *req.ConfirmEmail == 1
+	}
+	if req.AuditSiteA != nil {
+		auditSiteA := *req.AuditSiteA
+		if auditSiteA != "auto" {
+			auditSiteA = "manual"
+		}
+		merchant.AuditSiteA = auditSiteA
+	}
+	if req.AutoShip != nil {
+		merchant.AutoShip = *req.AutoShip
+	}
+
+	if user != nil {
+		if req.Avatar != nil {
+			user.Avatar = strings.TrimSpace(*req.Avatar)
+			needSaveUser = true
+		}
+		if req.Password != nil {
+			plain := *req.Password
+			if len(plain) < 6 || len(plain) > 20 {
+				return nil, ErrMerchantPasswordInvalid
+			}
+			hash, err := a.hashPassword(plain)
+			if err != nil {
+				return nil, err
+			}
+			user.PasswordHash = hash
+			merchant.PasswordPlain = plain
+			needSaveUser = true
+		}
+	}
+
+	merchant.UpdatedBy = operator
+	if err := a.store.SaveMerchant(merchant); err != nil {
+		return nil, err
+	}
+	if needSaveUser && user != nil {
+		if err := a.store.SaveUser(user); err != nil {
+			return nil, err
+		}
+	}
+
+	item := toMerchantListItem(*merchant, map[uint]string{}, user)
 	return &item, nil
 }
 
@@ -288,8 +450,26 @@ func (a *App) nextMerchantAccount() (string, error) {
 	return fmt.Sprintf("WIN%05d", seq), nil
 }
 
+// applyMerchantDisplayName 商户名和登录显示名同步更新。
+func (a *App) applyMerchantDisplayName(merchant *model.Merchant, user *model.User, raw string) error {
+	name := strings.TrimSpace(raw)
+	if !merchantNamePattern.MatchString(name) {
+		return ErrMerchantNameInvalid
+	}
+	if exist, err := a.store.FindMerchantByName(name); err == nil && exist.ID != merchant.ID {
+		return ErrMerchantNameExists
+	} else if err != nil && !isNotFound(err) {
+		return err
+	}
+	merchant.Name = name
+	if user != nil {
+		user.RealName = name
+	}
+	return nil
+}
+
 // toMerchantListItem 转换为商户列表项。
-func toMerchantListItem(m model.Merchant, parentNames map[uint]string) MerchantListItem {
+func toMerchantListItem(m model.Merchant, parentNames map[uint]string, user *model.User) MerchantListItem {
 	parentName := "-"
 	if m.ParentID != nil {
 		if name, ok := parentNames[*m.ParentID]; ok && name != "" {
@@ -297,6 +477,14 @@ func toMerchantListItem(m model.Merchant, parentNames map[uint]string) MerchantL
 		} else {
 			parentName = fmt.Sprintf("#%d", *m.ParentID)
 		}
+	}
+	nickname := m.Name
+	avatar := ""
+	if user != nil {
+		if user.RealName != "" {
+			nickname = user.RealName
+		}
+		avatar = user.Avatar
 	}
 	return MerchantListItem{
 		ID:               m.ID,
@@ -318,6 +506,8 @@ func toMerchantListItem(m model.Merchant, parentNames map[uint]string) MerchantL
 		SecretKey:        m.SecretKey,
 		AuditSiteA:       m.AuditSiteA,
 		Starred:          m.Starred,
+		Nickname:         nickname,
+		Avatar:           avatar,
 		CreatedBy:        m.CreatedBy,
 		CreatedAt:        m.CreatedAt.Format("2006-01-02 15:04:05"),
 		UpdatedBy:        m.UpdatedBy,

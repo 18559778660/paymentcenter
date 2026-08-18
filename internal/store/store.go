@@ -93,6 +93,16 @@ func (s *MySQLStore) GetUserByID(id uint) (*model.User, error) {
 	return &user, nil
 }
 
+// GetUsersByIDs 按主键批量查用户。
+func (s *MySQLStore) GetUsersByIDs(ids []uint) ([]model.User, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	var users []model.User
+	err := s.db.Where("id IN ?", ids).Find(&users).Error
+	return users, err
+}
+
 // FindUserByUsername 按登录账号查询用户，登录时使用。
 func (s *MySQLStore) FindUserByUsername(username string) (*model.User, error) {
 	var user model.User

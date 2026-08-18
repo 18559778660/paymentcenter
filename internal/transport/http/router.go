@@ -1,6 +1,8 @@
 package http
 
 import (
+	"os"
+
 	"github.com/gin-gonic/gin"
 
 	"paymentcenter/internal/config"
@@ -17,6 +19,8 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	r.Use(gin.Logger(), gin.Recovery(), middleware.CORS())
+	_ = os.MkdirAll("./uploads", 0o755)
+	r.Static("/api/files", "./uploads")
 
 	healthController := controller.NewHealthController(cfg)
 	authController := controller.NewAuthController(app)
@@ -52,8 +56,10 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 			authed.GET("/merchants", merchantController.List)
 			authed.GET("/merchants/options", merchantController.Options)
 			authed.POST("/merchants", merchantController.Create)
+			authed.PUT("/merchants/:id", merchantController.Update)
 			authed.PUT("/merchants/:id/star", merchantController.SetStar)
 			authed.PUT("/merchants/:id/status", merchantController.SetStatus)
+			authed.POST("/upload/avatar", merchantController.UploadAvatar)
 
 			// 健康检查
 			authed.GET("/health", healthController.Health)
