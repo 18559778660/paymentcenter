@@ -18,8 +18,8 @@ type Merchant struct {
 	PasswordPlain    string    `gorm:"column:password_plain;type:varchar(64);not null;default:''" json:"password_plain"` // 明文密码，列表展示用
 	Contact          string    `gorm:"column:contact;type:varchar(128);not null;default:''" json:"contact"` // 联系方式
 	ParentID         *uint     `gorm:"column:parent_id;index" json:"parent_id"` // 上级商户ID
-	AutoShip         bool      `gorm:"column:auto_ship;not null;default:true" json:"auto_ship"` // 自动发货
-	ConfirmEmail     bool      `gorm:"column:confirm_email;not null;default:true" json:"confirm_email"` // 确认邮件
+	AutoShip         bool      `gorm:"column:auto_ship;not null" json:"auto_ship"`                         // 自动发货；不要加 default，否则 false 会被 GORM 当成空值跳过
+	ConfirmEmail     bool      `gorm:"column:confirm_email;not null" json:"confirm_email"`                 // 确认邮件；同上，false 必须能写入
 	Status           int       `gorm:"column:status;not null;default:1;index" json:"status"` // 1启用 0禁用
 	LimitMode        string    `gorm:"column:limit_mode;type:varchar(32);not null;default:'统一配置'" json:"limit_mode"` // 限制模式
 	RateDiff         int       `gorm:"column:rate_diff;not null;default:0" json:"rate_diff"` // 汇率偏差 0-100

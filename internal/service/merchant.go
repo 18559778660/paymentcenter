@@ -237,6 +237,43 @@ func (a *App) SetMerchantStarred(id uint, starred bool, operator string) (*Merch
 	return &item, nil
 }
 
+// SetMerchantStatus 启用/禁用商户，同时同步登录账号状态。
+func (a *App) SetMerchantStatus(id uint, enabled bool, operator string) (*MerchantListItem, error) {
+	merchant, err := a.store.GetMerchantByID(id)
+	if err != nil {
+		if isNotFound(err) {
+			return nil, ErrMerchantNotFound
+		}
+		return nil, err
+	}
+	status := model.MerchantStatusDisabled
+	userStatus := model.UserStatusDisabled
+	if enabled {
+		status = model.MerchantStatusEnabled
+		userStatus = model.UserStatusEnabled
+	}
+	merchant.Status = status
+	merchant.UpdatedBy = operator
+	if err := a.store.SaveMerchant(merchant); err != nil {
+		return nil, err
+	}
+	if merchant.UserID > 0 {
+		user, err := a.store.GetUserByID(merchant.UserID)
+		if err != nil {
+			if !isNotFound(err) {
+				return nil, err
+			}
+		} else {
+			user.Status = userStatus
+			if err := a.store.SaveUser(user); err != nil {
+				return nil, err
+			}
+		}
+	}
+	item := toMerchantListItem(*merchant, map[uint]string{})
+	return &item, nil
+}
+
 // nextMerchantAccount 生成登录账号：WIN00000、WIN00001…按已有最大值 +1。
 func (a *App) nextMerchantAccount() (string, error) {
 	seq, err := a.store.MaxWINMerchantAccountSeq()

@@ -124,3 +124,33 @@ func (m *MerchantController) SetStar(c *gin.Context) {
 	}
 	response.Success(c, item)
 }
+
+// SetStatus 启用/禁用商户。
+func (m *MerchantController) SetStatus(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil || id == 0 {
+		response.Fail(c, "参数错误")
+		return
+	}
+	var req struct {
+		Status bool `json:"status"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, "参数错误")
+		return
+	}
+	operator := "system"
+	if user, ok := middleware.CurrentUser(c); ok {
+		operator = user.Username
+	}
+	item, err := m.app.SetMerchantStatus(uint(id), req.Status, operator)
+	if err != nil {
+		if errors.Is(err, service.ErrMerchantNotFound) {
+			response.Fail(c, "商户不存在")
+			return
+		}
+		response.Fail(c, err.Error())
+		return
+	}
+	response.Success(c, item)
+}
