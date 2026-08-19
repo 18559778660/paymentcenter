@@ -68,7 +68,7 @@
         "name": "ChannelList",
         "title": "通道列表",
         "path": "/channel/list",
-        "component": "/_shared/placeholder",
+        "component": "/channel/list/index",
         "icon": "lucide:list",
         "authCode": "channel:list",
         "type": 1,
