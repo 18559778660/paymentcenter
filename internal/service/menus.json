@@ -27,6 +27,46 @@
     ]
   },
   {
+    "name": "BasicConfig",
+    "title": "基本配置",
+    "path": "/basic-config",
+    "icon": "lucide:settings",
+    "type": 0,
+    "sort": 10,
+    "children": [
+      {
+        "name": "CardBinVerify",
+        "title": "卡头验证",
+        "path": "/basic-config/card-bin",
+        "component": "/basic-config/card-bin/index",
+        "icon": "lucide:credit-card",
+        "authCode": "basicConfig:cardBin",
+        "type": 1,
+        "sort": 1
+      },
+      {
+        "name": "CurrencyList",
+        "title": "货币列表",
+        "path": "/basic-config/currency",
+        "component": "/basic-config/currency/index",
+        "icon": "lucide:circle-dollar-sign",
+        "authCode": "basicConfig:currency",
+        "type": 1,
+        "sort": 2
+      },
+      {
+        "name": "CountryList",
+        "title": "国家列表",
+        "path": "/basic-config/country",
+        "component": "/basic-config/country/index",
+        "icon": "lucide:globe",
+        "authCode": "basicConfig:country",
+        "type": 1,
+        "sort": 3
+      }
+    ]
+  },
+  {
     "name": "Merchant",
     "title": "商户管理",
     "path": "/merchant",
