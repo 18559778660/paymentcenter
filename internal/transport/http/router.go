@@ -28,6 +28,7 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 	merchantController := controller.NewMerchantController(app)
 	merchantGroupController := controller.NewMerchantGroupController(app)
 	cardTypeController := controller.NewCardTypeController(app)
+	currencyController := controller.NewCurrencyController(app)
 	orderController := controller.NewOrderController(app)
 
 	api := r.Group("/api")
@@ -74,6 +75,13 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 			authed.GET("/card-types/brands", cardTypeController.Brands)
 			authed.POST("/card-types", cardTypeController.Create)
 			authed.PUT("/card-types/:id", cardTypeController.Update)
+
+			// 货币列表
+			authed.GET("/currencies", currencyController.List)
+			authed.GET("/currencies/options", currencyController.Options)
+			authed.POST("/currencies", currencyController.Create)
+			authed.PUT("/currencies/:id", currencyController.Update)
+			authed.DELETE("/currencies/:id", currencyController.Delete)
 
 			// 健康检查
 			authed.GET("/health", healthController.Health)

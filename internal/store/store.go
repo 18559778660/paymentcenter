@@ -31,6 +31,7 @@ func NewMySQLStore(dsn string) (*MySQLStore, error) {
 		&model.MerchantGroup{},
 		&model.MerchantGroupMember{},
 		&model.CardType{},
+		&model.Currency{},
 	); err != nil {
 		return nil, err
 	}
@@ -570,4 +571,78 @@ func (s *MySQLStore) CountCardTypes() (int64, error) {
 	var n int64
 	err := s.db.Model(&model.CardType{}).Count(&n).Error
 	return n, err
+}
+
+// CurrencyListFilter 货币列表筛选。
+type CurrencyListFilter struct {
+	Field   string
+	Keyword string
+}
+
+// CreateCurrency 插入货币。
+func (s *MySQLStore) CreateCurrency(item *model.Currency) error {
+	return s.db.Create(item).Error
+}
+
+// SaveCurrency 更新货币。
+func (s *MySQLStore) SaveCurrency(item *model.Currency) error {
+	return s.db.Save(item).Error
+}
+
+// GetCurrencyByID 按主键查货币。
+func (s *MySQLStore) GetCurrencyByID(id uint) (*model.Currency, error) {
+	var item model.Currency
+	tx := s.db.Where("id = ?", id).Limit(1).Find(&item)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return nil, ErrNotFound
+	}
+	return &item, nil
+}
+
+// FindCurrencyByCode 按编码查货币。
+func (s *MySQLStore) FindCurrencyByCode(code string) (*model.Currency, error) {
+	var item model.Currency
+	tx := s.db.Where("code = ?", code).Limit(1).Find(&item)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return nil, ErrNotFound
+	}
+	return &item, nil
+}
+
+// ListCurrencies 按条件查询货币，按 id 倒序。
+func (s *MySQLStore) ListCurrencies(filter CurrencyListFilter) ([]model.Currency, error) {
+	q := s.db.Model(&model.Currency{})
+	keyword := filter.Keyword
+	if keyword != "" {
+		like := "%" + keyword + "%"
+		switch filter.Field {
+		case "code":
+			q = q.Where("code LIKE ?", like)
+		case "name":
+			q = q.Where("name LIKE ?", like)
+		default:
+			q = q.Where("code LIKE ? OR name LIKE ?", like, like)
+		}
+	}
+	var list []model.Currency
+	err := q.Order("id DESC").Find(&list).Error
+	return list, err
+}
+
+// CountCurrencies 统计货币数量。
+func (s *MySQLStore) CountCurrencies() (int64, error) {
+	var n int64
+	err := s.db.Model(&model.Currency{}).Count(&n).Error
+	return n, err
+}
+
+// DeleteCurrency 删除货币。
+func (s *MySQLStore) DeleteCurrency(id uint) error {
+	return s.db.Delete(&model.Currency{}, id).Error
 }

@@ -58,6 +58,13 @@ type Store interface {
 	FindCardTypeByCode(code string) (*model.CardType, error)
 	ListCardTypes(filter store.CardTypeListFilter) ([]model.CardType, error)
 	CountCardTypes() (int64, error)
+	CreateCurrency(item *model.Currency) error
+	SaveCurrency(item *model.Currency) error
+	GetCurrencyByID(id uint) (*model.Currency, error)
+	FindCurrencyByCode(code string) (*model.Currency, error)
+	ListCurrencies(filter store.CurrencyListFilter) ([]model.Currency, error)
+	CountCurrencies() (int64, error)
+	DeleteCurrency(id uint) error
 }
 
 // App 业务层入口。各业务方法拆在同包的 auth.go / menu.go / order.go / seed.go。

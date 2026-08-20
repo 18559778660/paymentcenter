@@ -83,6 +83,9 @@ func (a *App) SeedRBAC(adminUsername, adminPassword string) error {
 	if err := a.ensureCardTypes(); err != nil {
 		return err
 	}
+	if err := a.ensureCurrencies(); err != nil {
+		return err
+	}
 
 	if adminUsername == "" || adminPassword == "" {
 		return nil
@@ -213,6 +216,27 @@ func (a *App) ensureCardTypes() error {
 	}
 	for i := range seeds {
 		if err := a.store.CreateCardType(&seeds[i]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ensureCurrencies 首次启动按 currencies.json 写入默认货币，已有数据不覆盖。
+func (a *App) ensureCurrencies() error {
+	n, err := a.store.CountCurrencies()
+	if err != nil {
+		return err
+	}
+	if n > 0 {
+		return nil
+	}
+	seeds, err := currencySeedRecords()
+	if err != nil {
+		return err
+	}
+	for i := range seeds {
+		if err := a.store.CreateCurrency(&seeds[i]); err != nil {
 			return err
 		}
 	}
