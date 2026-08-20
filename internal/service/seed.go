@@ -86,6 +86,9 @@ func (a *App) SeedRBAC(adminUsername, adminPassword string) error {
 	if err := a.ensureCurrencies(); err != nil {
 		return err
 	}
+	if err := a.ensureCountries(); err != nil {
+		return err
+	}
 
 	if adminUsername == "" || adminPassword == "" {
 		return nil
@@ -237,6 +240,27 @@ func (a *App) ensureCurrencies() error {
 	}
 	for i := range seeds {
 		if err := a.store.CreateCurrency(&seeds[i]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ensureCountries 首次启动按 countries.json 写入默认国家，已有数据不覆盖。
+func (a *App) ensureCountries() error {
+	n, err := a.store.CountCountries()
+	if err != nil {
+		return err
+	}
+	if n > 0 {
+		return nil
+	}
+	seeds, err := countrySeedRecords()
+	if err != nil {
+		return err
+	}
+	for i := range seeds {
+		if err := a.store.CreateCountry(&seeds[i]); err != nil {
 			return err
 		}
 	}

@@ -32,6 +32,7 @@ func NewMySQLStore(dsn string) (*MySQLStore, error) {
 		&model.MerchantGroupMember{},
 		&model.CardType{},
 		&model.Currency{},
+		&model.Country{},
 	); err != nil {
 		return nil, err
 	}
@@ -645,4 +646,78 @@ func (s *MySQLStore) CountCurrencies() (int64, error) {
 // DeleteCurrency 删除货币。
 func (s *MySQLStore) DeleteCurrency(id uint) error {
 	return s.db.Delete(&model.Currency{}, id).Error
+}
+
+// CountryListFilter 国家列表筛选。
+type CountryListFilter struct {
+	Field   string
+	Keyword string
+}
+
+// CreateCountry 插入国家。
+func (s *MySQLStore) CreateCountry(item *model.Country) error {
+	return s.db.Create(item).Error
+}
+
+// SaveCountry 更新国家。
+func (s *MySQLStore) SaveCountry(item *model.Country) error {
+	return s.db.Save(item).Error
+}
+
+// GetCountryByID 按主键查国家。
+func (s *MySQLStore) GetCountryByID(id uint) (*model.Country, error) {
+	var item model.Country
+	tx := s.db.Where("id = ?", id).Limit(1).Find(&item)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return nil, ErrNotFound
+	}
+	return &item, nil
+}
+
+// FindCountryByCode 按编码查国家。
+func (s *MySQLStore) FindCountryByCode(code string) (*model.Country, error) {
+	var item model.Country
+	tx := s.db.Where("code = ?", code).Limit(1).Find(&item)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return nil, ErrNotFound
+	}
+	return &item, nil
+}
+
+// ListCountries 按条件查询国家，按 id 倒序。
+func (s *MySQLStore) ListCountries(filter CountryListFilter) ([]model.Country, error) {
+	q := s.db.Model(&model.Country{})
+	keyword := filter.Keyword
+	if keyword != "" {
+		like := "%" + keyword + "%"
+		switch filter.Field {
+		case "code":
+			q = q.Where("code LIKE ?", like)
+		case "name":
+			q = q.Where("name LIKE ?", like)
+		default:
+			q = q.Where("code LIKE ? OR name LIKE ?", like, like)
+		}
+	}
+	var list []model.Country
+	err := q.Order("id DESC").Find(&list).Error
+	return list, err
+}
+
+// CountCountries 统计国家数量。
+func (s *MySQLStore) CountCountries() (int64, error) {
+	var n int64
+	err := s.db.Model(&model.Country{}).Count(&n).Error
+	return n, err
+}
+
+// DeleteCountry 删除国家。
+func (s *MySQLStore) DeleteCountry(id uint) error {
+	return s.db.Delete(&model.Country{}, id).Error
 }

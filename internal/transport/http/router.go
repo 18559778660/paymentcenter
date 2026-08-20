@@ -29,6 +29,7 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 	merchantGroupController := controller.NewMerchantGroupController(app)
 	cardTypeController := controller.NewCardTypeController(app)
 	currencyController := controller.NewCurrencyController(app)
+	countryController := controller.NewCountryController(app)
 	orderController := controller.NewOrderController(app)
 
 	api := r.Group("/api")
@@ -82,6 +83,13 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 			authed.POST("/currencies", currencyController.Create)
 			authed.PUT("/currencies/:id", currencyController.Update)
 			authed.DELETE("/currencies/:id", currencyController.Delete)
+
+			// 国家列表
+			authed.GET("/countries", countryController.List)
+			authed.GET("/countries/options", countryController.Options)
+			authed.POST("/countries", countryController.Create)
+			authed.PUT("/countries/:id", countryController.Update)
+			authed.DELETE("/countries/:id", countryController.Delete)
 
 			// 健康检查
 			authed.GET("/health", healthController.Health)

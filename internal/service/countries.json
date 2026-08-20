@@ -1,0 +1,1177 @@
+[
+    {
+        "code":  "AF",
+        "name":  "Afghanistan",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "AL",
+        "name":  "Albania",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "DZ",
+        "name":  "Algeria",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "AS",
+        "name":  "American Samoa",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "AD",
+        "name":  "Andorra",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "AO",
+        "name":  "Angola",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "AI",
+        "name":  "Anguilla",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "AG",
+        "name":  "Antigua and Barbuda",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "AR",
+        "name":  "Argentina",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "AM",
+        "name":  "Armenia",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "AW",
+        "name":  "Aruba",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "AU",
+        "name":  "Australia",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "AT",
+        "name":  "Austria",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "AZ",
+        "name":  "Azerbaijan",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "BS",
+        "name":  "Bahamas",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "BH",
+        "name":  "Bahrain",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "BD",
+        "name":  "Bangladesh",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "BB",
+        "name":  "Barbados",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "BY",
+        "name":  "Belarus",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "BE",
+        "name":  "Belgium",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "BZ",
+        "name":  "Belize",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "BJ",
+        "name":  "Benin",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "BM",
+        "name":  "Bermuda",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "BT",
+        "name":  "Bhutan",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "BO",
+        "name":  "Bolivia",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "BA",
+        "name":  "Bosnia and Herzegovina",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "BW",
+        "name":  "Botswana",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "BR",
+        "name":  "Brazil",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "VG",
+        "name":  "British Virgin Islands",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "BN",
+        "name":  "Brunei",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "BG",
+        "name":  "Bulgaria",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "BF",
+        "name":  "Burkina Faso",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "BI",
+        "name":  "Burundi",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "KH",
+        "name":  "Cambodia",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "CM",
+        "name":  "Cameroon",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "CA",
+        "name":  "Canada",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "CV",
+        "name":  "Cape Verde",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "KY",
+        "name":  "Cayman Islands",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "CF",
+        "name":  "Central African Republic",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "TD",
+        "name":  "Chad",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "CL",
+        "name":  "Chile",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "CN",
+        "name":  "China",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "CO",
+        "name":  "Colombia",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "KM",
+        "name":  "Comoros",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "CG",
+        "name":  "Congo",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "CK",
+        "name":  "Cook Islands",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "CR",
+        "name":  "Costa Rica",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "HR",
+        "name":  "Croatia",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "CU",
+        "name":  "Cuba",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "CY",
+        "name":  "Cyprus",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "CZ",
+        "name":  "Czechia",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "DK",
+        "name":  "Denmark",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "DJ",
+        "name":  "Djibouti",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "DM",
+        "name":  "Dominica",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "DO",
+        "name":  "Dominican Republic",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "EC",
+        "name":  "Ecuador",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "EG",
+        "name":  "Egypt",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "SV",
+        "name":  "El Salvador",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "GQ",
+        "name":  "Equatorial Guinea",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "ER",
+        "name":  "Eritrea",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "EE",
+        "name":  "Estonia",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "SZ",
+        "name":  "Eswatini",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "ET",
+        "name":  "Ethiopia",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "FK",
+        "name":  "Falkland Islands",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "FO",
+        "name":  "Faroe Islands",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "FJ",
+        "name":  "Fiji",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "FI",
+        "name":  "Finland",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "FR",
+        "name":  "France",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "GF",
+        "name":  "French Guiana",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "PF",
+        "name":  "French Polynesia",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "GA",
+        "name":  "Gabon",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "GM",
+        "name":  "Gambia",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "GE",
+        "name":  "Georgia",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "DE",
+        "name":  "Germany",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "GH",
+        "name":  "Ghana",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "GI",
+        "name":  "Gibraltar",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "GR",
+        "name":  "Greece",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "GL",
+        "name":  "Greenland",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "GD",
+        "name":  "Grenada",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "GP",
+        "name":  "Guadeloupe",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "GU",
+        "name":  "Guam",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "GT",
+        "name":  "Guatemala",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "GG",
+        "name":  "Guernsey",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "GN",
+        "name":  "Guinea",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "GW",
+        "name":  "Guinea-Bissau",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "GY",
+        "name":  "Guyana",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "HT",
+        "name":  "Haiti",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "HN",
+        "name":  "Honduras",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "HK",
+        "name":  "Hong Kong",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "HU",
+        "name":  "Hungary",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "IS",
+        "name":  "Iceland",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "IN",
+        "name":  "India",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "ID",
+        "name":  "Indonesia",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "IR",
+        "name":  "Iran",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "IQ",
+        "name":  "Iraq",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "IE",
+        "name":  "Ireland",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "IM",
+        "name":  "Isle of Man",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "IL",
+        "name":  "Israel",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "IT",
+        "name":  "Italy",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "JM",
+        "name":  "Jamaica",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "JP",
+        "name":  "Japan",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "JE",
+        "name":  "Jersey",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "JO",
+        "name":  "Jordan",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "KZ",
+        "name":  "Kazakhstan",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "KE",
+        "name":  "Kenya",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "KI",
+        "name":  "Kiribati",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "KW",
+        "name":  "Kuwait",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "KG",
+        "name":  "Kyrgyzstan",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "LA",
+        "name":  "Laos",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "LV",
+        "name":  "Latvia",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "LB",
+        "name":  "Lebanon",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "LS",
+        "name":  "Lesotho",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "LR",
+        "name":  "Liberia",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "LY",
+        "name":  "Libya",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "LI",
+        "name":  "Liechtenstein",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "LT",
+        "name":  "Lithuania",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "LU",
+        "name":  "Luxembourg",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "MO",
+        "name":  "Macao",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "MG",
+        "name":  "Madagascar",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "MW",
+        "name":  "Malawi",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "MY",
+        "name":  "Malaysia",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "MV",
+        "name":  "Maldives",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "ML",
+        "name":  "Mali",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "MT",
+        "name":  "Malta",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "MH",
+        "name":  "Marshall Islands",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "MQ",
+        "name":  "Martinique",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "MR",
+        "name":  "Mauritania",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "MU",
+        "name":  "Mauritius",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "YT",
+        "name":  "Mayotte",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "MX",
+        "name":  "Mexico",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "FM",
+        "name":  "Micronesia",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "MD",
+        "name":  "Moldova",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "MC",
+        "name":  "Monaco",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "MN",
+        "name":  "Mongolia",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "ME",
+        "name":  "Montenegro",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "MS",
+        "name":  "Montserrat",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "MA",
+        "name":  "Morocco",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "MZ",
+        "name":  "Mozambique",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "MM",
+        "name":  "Myanmar",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "NA",
+        "name":  "Namibia",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "NR",
+        "name":  "Nauru",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "NP",
+        "name":  "Nepal",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "NL",
+        "name":  "Netherlands",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "NC",
+        "name":  "New Caledonia",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "NZ",
+        "name":  "New Zealand",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "NI",
+        "name":  "Nicaragua",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "NE",
+        "name":  "Niger",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "NG",
+        "name":  "Nigeria",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "NU",
+        "name":  "Niue",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "NF",
+        "name":  "Norfolk Island",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "MK",
+        "name":  "North Macedonia",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "NO",
+        "name":  "Norway",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "OM",
+        "name":  "Oman",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "PK",
+        "name":  "Pakistan",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "PW",
+        "name":  "Palau",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "PS",
+        "name":  "Palestine",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "PA",
+        "name":  "Panama",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "PG",
+        "name":  "Papua New Guinea",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "PY",
+        "name":  "Paraguay",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "PE",
+        "name":  "Peru",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "PH",
+        "name":  "Philippines",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "PL",
+        "name":  "Poland",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "PT",
+        "name":  "Portugal",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "PR",
+        "name":  "Puerto Rico",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "QA",
+        "name":  "Qatar",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "RE",
+        "name":  "Réunion",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "RO",
+        "name":  "Romania",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "RU",
+        "name":  "Russia",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "RW",
+        "name":  "Rwanda",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "KN",
+        "name":  "Saint Kitts and Nevis",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "LC",
+        "name":  "Saint Lucia",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "MF",
+        "name":  "Saint Martin",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "VC",
+        "name":  "Saint Vincent and the Grenadines",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "WS",
+        "name":  "Samoa",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "SM",
+        "name":  "San Marino",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "ST",
+        "name":  "Sao Tome and Principe",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "SA",
+        "name":  "Saudi Arabia",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "SN",
+        "name":  "Senegal",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "RS",
+        "name":  "Serbia",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "SC",
+        "name":  "Seychelles",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "SL",
+        "name":  "Sierra Leone",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "SG",
+        "name":  "Singapore",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "SK",
+        "name":  "Slovakia",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "SI",
+        "name":  "Slovenia",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "SB",
+        "name":  "Solomon Islands",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "SO",
+        "name":  "Somalia",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "ZA",
+        "name":  "South Africa",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "KR",
+        "name":  "South Korea",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "ES",
+        "name":  "Spain",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "LK",
+        "name":  "Sri Lanka",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "SD",
+        "name":  "Sudan",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "SR",
+        "name":  "Suriname",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "SE",
+        "name":  "Sweden",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "CH",
+        "name":  "Switzerland",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "SY",
+        "name":  "Syria",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "TW",
+        "name":  "Taiwan",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "TJ",
+        "name":  "Tajikistan",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "TZ",
+        "name":  "Tanzania",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "TH",
+        "name":  "Thailand",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "TL",
+        "name":  "Timor-Leste",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "TG",
+        "name":  "Togo",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "TO",
+        "name":  "Tonga",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "TT",
+        "name":  "Trinidad and Tobago",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "TN",
+        "name":  "Tunisia",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "TR",
+        "name":  "Turkey",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "TM",
+        "name":  "Turkmenistan",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "TC",
+        "name":  "Turks and Caicos Islands",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "TV",
+        "name":  "Tuvalu",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "UG",
+        "name":  "Uganda",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "UA",
+        "name":  "Ukraine",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "AE",
+        "name":  "United Arab Emirates",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "GB",
+        "name":  "United Kingdom",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "US",
+        "name":  "United States",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "UY",
+        "name":  "Uruguay",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "UZ",
+        "name":  "Uzbekistan",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "VU",
+        "name":  "Vanuatu",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "VA",
+        "name":  "Vatican City",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "VE",
+        "name":  "Venezuela",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "VN",
+        "name":  "Vietnam",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "VI",
+        "name":  "U.S. Virgin Islands",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "WF",
+        "name":  "Wallis and Futuna",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "EH",
+        "name":  "Western Sahara",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "YE",
+        "name":  "Yemen",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "ZM",
+        "name":  "Zambia",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "UM",
+        "name":  "United States Minor Outlying Islands",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "KP",
+        "name":  "North Korea",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "MP",
+        "name":  "Northern Mariana Islands",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "BQ",
+        "name":  "Caribbean Netherlands",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "SX",
+        "name":  "Sint Maarten",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "CW",
+        "name":  "Curaçao",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "ZW",
+        "name":  "Zimbabwe",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "CD",
+        "name":  "DR Congo",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "XK",
+        "name":  "Kosovo",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "SS",
+        "name":  "South Sudan",
+        "cardBinRatio":  99
+    },
+    {
+        "code":  "IC",
+        "name":  "Canary Islands",
+        "cardBinRatio":  99
+    }
+]

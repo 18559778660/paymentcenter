@@ -65,6 +65,13 @@ type Store interface {
 	ListCurrencies(filter store.CurrencyListFilter) ([]model.Currency, error)
 	CountCurrencies() (int64, error)
 	DeleteCurrency(id uint) error
+	CreateCountry(item *model.Country) error
+	SaveCountry(item *model.Country) error
+	GetCountryByID(id uint) (*model.Country, error)
+	FindCountryByCode(code string) (*model.Country, error)
+	ListCountries(filter store.CountryListFilter) ([]model.Country, error)
+	CountCountries() (int64, error)
+	DeleteCountry(id uint) error
 }
 
 // App 业务层入口。各业务方法拆在同包的 auth.go / menu.go / order.go / seed.go。
