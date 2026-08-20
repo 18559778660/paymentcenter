@@ -30,6 +30,7 @@ func NewMySQLStore(dsn string) (*MySQLStore, error) {
 		&model.Merchant{},
 		&model.MerchantGroup{},
 		&model.MerchantGroupMember{},
+		&model.CardType{},
 	); err != nil {
 		return nil, err
 	}
@@ -491,4 +492,82 @@ func (s *MySQLStore) ReplaceMerchantGroupMembers(groupID uint, merchantIDs []uin
 		}
 		return tx.Create(&rows).Error
 	})
+}
+
+// CardTypeListFilter 卡类型列表筛选。
+type CardTypeListFilter struct {
+	Field   string
+	Keyword string
+	Names   []string
+}
+
+// CreateCardType 插入卡类型。
+func (s *MySQLStore) CreateCardType(item *model.CardType) error {
+	return s.db.Create(item).Error
+}
+
+// SaveCardType 更新卡类型。
+func (s *MySQLStore) SaveCardType(item *model.CardType) error {
+	return s.db.Save(item).Error
+}
+
+// GetCardTypeByID 按主键查卡类型。
+func (s *MySQLStore) GetCardTypeByID(id uint) (*model.CardType, error) {
+	var item model.CardType
+	tx := s.db.Where("id = ?", id).Limit(1).Find(&item)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return nil, ErrNotFound
+	}
+	return &item, nil
+}
+
+// FindCardTypeByCode 按缩写查卡类型。
+func (s *MySQLStore) FindCardTypeByCode(code string) (*model.CardType, error) {
+	var item model.CardType
+	tx := s.db.Where("code = ?", code).Limit(1).Find(&item)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return nil, ErrNotFound
+	}
+	return &item, nil
+}
+
+// ListCardTypes 按条件查询卡类型，按 id 倒序。
+func (s *MySQLStore) ListCardTypes(filter CardTypeListFilter) ([]model.CardType, error) {
+	q := s.db.Model(&model.CardType{})
+	keyword := filter.Keyword
+	if keyword != "" {
+		like := "%" + keyword + "%"
+		switch filter.Field {
+		case "code":
+			q = q.Where("code LIKE ?", like)
+		case "name":
+			if len(filter.Names) > 0 {
+				q = q.Where("name IN ?", filter.Names)
+			} else {
+				q = q.Where("name LIKE ?", like)
+			}
+		default:
+			if len(filter.Names) > 0 {
+				q = q.Where("code LIKE ? OR name IN ?", like, filter.Names)
+			} else {
+				q = q.Where("code LIKE ? OR name LIKE ?", like, like)
+			}
+		}
+	}
+	var list []model.CardType
+	err := q.Order("id DESC").Find(&list).Error
+	return list, err
+}
+
+// CountCardTypes 统计卡类型数量。
+func (s *MySQLStore) CountCardTypes() (int64, error) {
+	var n int64
+	err := s.db.Model(&model.CardType{}).Count(&n).Error
+	return n, err
 }

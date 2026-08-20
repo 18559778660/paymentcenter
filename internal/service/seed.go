@@ -14,10 +14,11 @@ import (
 // type：0目录 1菜单 2按钮
 //
 // meta 为 Vben 前端 RouteMeta 扩展，原样透传，常用键：
-//   hideInMenu          不在侧边栏显示
-//   hideChildrenInMenu  侧边栏不展开子菜单
-//   affixTab            标签栏钉住，关不掉
-//   keepAlive           页面缓存（需要时再加）
+//
+//	hideInMenu          不在侧边栏显示
+//	hideChildrenInMenu  侧边栏不展开子菜单
+//	affixTab            标签栏钉住，关不掉
+//	keepAlive           页面缓存（需要时再加）
 //
 //go:embed menus.json
 var menusJSON []byte
@@ -77,6 +78,10 @@ func (a *App) SeedRBAC(adminUsername, adminPassword string) error {
 		if err := a.store.EnsureRoleMenu(merchantRole.ID, analytics.ID); err != nil {
 			return err
 		}
+	}
+
+	if err := a.ensureCardTypes(); err != nil {
+		return err
 	}
 
 	if adminUsername == "" || adminPassword == "" {
@@ -191,6 +196,27 @@ func (a *App) ensureAdminUser(username, password string, superRoleID uint) error
 		}
 	}
 	return a.store.EnsureUserRole(user.ID, superRoleID)
+}
+
+// ensureCardTypes 首次启动按 card_brands.json 写入默认卡类型，已有数据不覆盖。
+func (a *App) ensureCardTypes() error {
+	n, err := a.store.CountCardTypes()
+	if err != nil {
+		return err
+	}
+	if n > 0 {
+		return nil
+	}
+	seeds, err := cardTypeSeedRecords()
+	if err != nil {
+		return err
+	}
+	for i := range seeds {
+		if err := a.store.CreateCardType(&seeds[i]); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // loadMenuSeeds 读取 menus.json。只给库里还不存在的菜单做插入。

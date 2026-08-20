@@ -1,0 +1,104 @@
+[
+  {
+    "value": "visa",
+    "label": "Visa",
+    "code": "VI",
+    "lengths": [13, 16, 19],
+    "prefixes": [{ "start": "4" }]
+  },
+  {
+    "value": "mastercard",
+    "label": "Mastercard",
+    "code": "MC",
+    "lengths": [16],
+    "prefixes": [
+      { "start": "51", "end": "55" },
+      { "start": "2221", "end": "2720" }
+    ]
+  },
+  {
+    "value": "amex",
+    "label": "American Express",
+    "code": "AE",
+    "lengths": [15],
+    "prefixes": [{ "start": "34" }, { "start": "37" }]
+  },
+  {
+    "value": "unionpay",
+    "label": "UnionPay",
+    "code": "UP",
+    "lengths": [16, 17, 18, 19],
+    "prefixes": [{ "start": "62" }]
+  },
+  {
+    "value": "jcb",
+    "label": "JCB",
+    "code": "JCB",
+    "lengths": [16, 17, 18, 19],
+    "prefixes": [
+      { "start": "3528", "end": "3529" },
+      { "start": "3530", "end": "3589" }
+    ]
+  },
+  {
+    "value": "discover",
+    "label": "Discover",
+    "code": "DIS",
+    "lengths": [16],
+    "prefixes": [
+      { "start": "6011" },
+      { "start": "644", "end": "649" },
+      { "start": "65" }
+    ]
+  },
+  {
+    "value": "maestro",
+    "label": "Maestro",
+    "code": "MAE",
+    "lengths": [13, 14, 15, 16, 17, 18, 19],
+    "prefixes": [
+      { "start": "5018" },
+      { "start": "5020" },
+      { "start": "5038" },
+      { "start": "5893" },
+      { "start": "6304" },
+      { "start": "6759" },
+      { "start": "6761" },
+      { "start": "6762" },
+      { "start": "6763" }
+    ]
+  },
+  {
+    "value": "gpn",
+    "label": "GPN",
+    "code": "GPN",
+    "lengths": [16, 18, 19],
+    "prefixes": [
+      { "start": "50" },
+      { "start": "56" },
+      { "start": "58" },
+      { "start": "60", "end": "63" }
+    ]
+  },
+  {
+    "value": "diners_us",
+    "label": "Diners Club - USA & Canada",
+    "code": "DC3",
+    "lengths": [16],
+    "prefixes": [{ "start": "54" }]
+  },
+  {
+    "value": "diners_intl",
+    "label": "Diners Club - International",
+    "code": "DC2",
+    "lengths": [14],
+    "prefixes": [{ "start": "36" }]
+  },
+  {
+    "value": "diners_cb",
+    "label": "Diners Club - Carte Blanche",
+    "code": "DC1",
+    "lengths": [14],
+    "prefixes": [{ "start": "300", "end": "305" }]
+  }
+]

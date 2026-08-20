@@ -52,6 +52,12 @@ type Store interface {
 	DeleteMerchantGroup(id uint) error
 	ListMerchantGroupMembers(groupIDs []uint) ([]model.MerchantGroupMember, error)
 	ReplaceMerchantGroupMembers(groupID uint, merchantIDs []uint) error
+	CreateCardType(item *model.CardType) error
+	SaveCardType(item *model.CardType) error
+	GetCardTypeByID(id uint) (*model.CardType, error)
+	FindCardTypeByCode(code string) (*model.CardType, error)
+	ListCardTypes(filter store.CardTypeListFilter) ([]model.CardType, error)
+	CountCardTypes() (int64, error)
 }
 
 // App 业务层入口。各业务方法拆在同包的 auth.go / menu.go / order.go / seed.go。
