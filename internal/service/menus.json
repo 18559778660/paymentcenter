@@ -118,7 +118,7 @@
         "name": "ChannelAccount",
         "title": "通道账号",
         "path": "/channel/account",
-        "component": "/_shared/placeholder",
+        "component": "/channel/account/index",
         "icon": "lucide:user-cog",
         "authCode": "channel:account",
         "type": 1,
