@@ -128,7 +128,7 @@
         "name": "ChannelGroup",
         "title": "通道分组",
         "path": "/channel/group",
-        "component": "/_shared/placeholder",
+        "component": "/channel/group/index",
         "icon": "lucide:layers",
         "authCode": "channel:group",
         "type": 1,
