@@ -1,6 +1,7 @@
 package service
 
 import (
+	"strings"
 	"time"
 
 	"paymentcenter/internal/model"
@@ -72,16 +73,27 @@ type Store interface {
 	ListCountries(filter store.CountryListFilter) ([]model.Country, error)
 	CountCountries() (int64, error)
 	DeleteCountry(id uint) error
+	CreateChannel(item *model.Channel) error
+	SaveChannel(item *model.Channel) error
+	GetChannelByID(id uint) (*model.Channel, error)
+	FindChannelByName(name string) (*model.Channel, error)
+	ListChannels(filter store.ChannelListFilter) ([]model.Channel, error)
 }
 
 // App 业务层入口。各业务方法拆在同包的 auth.go / menu.go / order.go / seed.go。
 type App struct {
-	store      Store
-	authSecret string
-	tokenTTL   time.Duration
+	store          Store
+	authSecret     string
+	tokenTTL       time.Duration
+	gatewayBaseURL string
 }
 
 // NewApp 创建业务层。store 一般传入 *store.MySQLStore。
-func NewApp(st Store, authSecret string, tokenTTL time.Duration) *App {
-	return &App{store: st, authSecret: authSecret, tokenTTL: tokenTTL}
+func NewApp(st Store, authSecret string, tokenTTL time.Duration, gatewayBaseURL string) *App {
+	return &App{
+		store:          st,
+		authSecret:     authSecret,
+		tokenTTL:       tokenTTL,
+		gatewayBaseURL: strings.TrimRight(gatewayBaseURL, "/"),
+	}
 }

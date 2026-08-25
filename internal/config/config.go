@@ -18,6 +18,7 @@ type Config struct {
 	TokenTTL      time.Duration
 	AdminUsername string
 	AdminPassword string
+	GatewayBaseURL string
 }
 
 // 获取环境变量
@@ -54,5 +55,6 @@ func Load() Config {
 		TokenTTL:      time.Duration(getenvInt("AUTH_TOKEN_TTL_HOURS", 12)) * time.Hour,
 		AdminUsername: getenv("ADMIN_USERNAME", "admin"),
 		AdminPassword: getenv("ADMIN_PASSWORD", "admin123"),
+		GatewayBaseURL: getenv("GATEWAY_BASE_URL", "http://127.0.0.1:8080"),
 	}
 }

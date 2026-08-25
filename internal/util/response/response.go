@@ -12,12 +12,11 @@ const (
 	CodeUnauthorized = -1 // token 无效或未登录
 )
 
-// Body 统一响应体。前端成功取 data；提示文案同时给 message 和 msg，兼容 Vben。
+// Body 统一响应体。前端成功取 data，提示文案取 msg。
 type Body struct {
-	Code    int         `json:"code"`    // 业务码，0 成功
-	Data    interface{} `json:"data"`    // 业务数据
-	Message string      `json:"message"` // 提示信息，前端优先读这个
-	Msg     string      `json:"msg"`     // 旧字段，内容和 message 相同
+	Code int         `json:"code"` // 业务码，0 成功
+	Data interface{} `json:"data"` // 业务数据
+	Msg  string      `json:"msg"`  // 提示信息
 }
 
 // Success 返回成功，提示为 ok。
@@ -38,10 +37,9 @@ func Fail(c *gin.Context, msg string) {
 // FailWithCode 返回业务失败，并指定业务码和 data。
 func FailWithCode(c *gin.Context, code int, msg string, data interface{}) {
 	c.JSON(http.StatusOK, Body{
-		Code:    code,
-		Data:    data,
-		Message: msg,
-		Msg:     msg,
+		Code: code,
+		Data: data,
+		Msg:  msg,
 	})
 }
 
@@ -53,9 +51,8 @@ func Unauthorized(c *gin.Context, msg string) {
 // write 实际写出 JSON 响应。
 func write(c *gin.Context, httpStatus, code int, data interface{}, msg string) {
 	c.JSON(httpStatus, Body{
-		Code:    code,
-		Data:    data,
-		Message: msg,
-		Msg:     msg,
+		Code: code,
+		Data: data,
+		Msg:  msg,
 	})
 }

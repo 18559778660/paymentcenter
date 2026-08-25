@@ -30,10 +30,15 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 	cardTypeController := controller.NewCardTypeController(app)
 	currencyController := controller.NewCurrencyController(app)
 	countryController := controller.NewCountryController(app)
+	channelController := controller.NewChannelController(app)
+	gatewayController := controller.NewGatewayController(app)
 	orderController := controller.NewOrderController(app)
 
 	api := r.Group("/api")
 	{
+		// A 站对接网关，无需登录
+		api.GET("/gateway", gatewayController.Access)
+
 		api.POST("/auth/login", authController.Login)
 		// 退出不校验 token：前端可能已清本地 token，或 token 已过期，仍应能成功退出
 		api.POST("/auth/logout", authController.Logout)
@@ -90,6 +95,13 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 			authed.POST("/countries", countryController.Create)
 			authed.PUT("/countries/:id", countryController.Update)
 			authed.DELETE("/countries/:id", countryController.Delete)
+
+			// 通道列表
+			authed.GET("/channels", channelController.List)
+			authed.POST("/channels", channelController.Create)
+			authed.PUT("/channels/:id", channelController.Update)
+			authed.PUT("/channels/:id/limits", channelController.UpdateLimits)
+			authed.PUT("/channels/:id/status", channelController.SetStatus)
 
 			// 健康检查
 			authed.GET("/health", healthController.Health)

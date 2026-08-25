@@ -33,6 +33,7 @@ func NewMySQLStore(dsn string) (*MySQLStore, error) {
 		&model.CardType{},
 		&model.Currency{},
 		&model.Country{},
+		&model.Channel{},
 	); err != nil {
 		return nil, err
 	}
@@ -720,4 +721,60 @@ func (s *MySQLStore) CountCountries() (int64, error) {
 // DeleteCountry 删除国家。
 func (s *MySQLStore) DeleteCountry(id uint) error {
 	return s.db.Delete(&model.Country{}, id).Error
+}
+
+// ChannelListFilter 通道列表筛选。
+type ChannelListFilter struct {
+	ID   *uint
+	Name string
+}
+
+// CreateChannel 插入通道。
+func (s *MySQLStore) CreateChannel(item *model.Channel) error {
+	return s.db.Create(item).Error
+}
+
+// SaveChannel 更新通道。
+func (s *MySQLStore) SaveChannel(item *model.Channel) error {
+	return s.db.Save(item).Error
+}
+
+// GetChannelByID 按主键查通道。
+func (s *MySQLStore) GetChannelByID(id uint) (*model.Channel, error) {
+	var item model.Channel
+	tx := s.db.Where("id = ?", id).Limit(1).Find(&item)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return nil, ErrNotFound
+	}
+	return &item, nil
+}
+
+// FindChannelByName 按通道名查询。
+func (s *MySQLStore) FindChannelByName(name string) (*model.Channel, error) {
+	var item model.Channel
+	tx := s.db.Where("name = ?", name).Limit(1).Find(&item)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return nil, ErrNotFound
+	}
+	return &item, nil
+}
+
+// ListChannels 按条件查询通道，按 id 倒序。
+func (s *MySQLStore) ListChannels(filter ChannelListFilter) ([]model.Channel, error) {
+	q := s.db.Model(&model.Channel{})
+	if filter.ID != nil {
+		q = q.Where("id = ?", *filter.ID)
+	}
+	if filter.Name != "" {
+		q = q.Where("name LIKE ?", "%"+filter.Name+"%")
+	}
+	var list []model.Channel
+	err := q.Order("id DESC").Find(&list).Error
+	return list, err
 }
