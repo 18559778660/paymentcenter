@@ -21,6 +21,7 @@ type ChannelListItem struct {
 	ID                uint     `json:"id"`
 	Name              string   `json:"name"`
 	PackageName       string   `json:"packageName"`
+	PackageURL        string   `json:"packageUrl"`
 	TotalAmount       float64  `json:"totalAmount"`
 	Balance           float64  `json:"balance"`
 	DailyOrderLimit   int      `json:"dailyOrderLimit"`
@@ -348,7 +349,8 @@ func (a *App) toChannelListItem(item model.Channel) ChannelListItem {
 	return ChannelListItem{
 		ID:                item.ID,
 		Name:              item.Name,
-		PackageName:       item.PackageName,
+		PackageName:       packageDisplayName(item.PackageName),
+		PackageURL:        a.BuildPackageURL(item.ID, item.PackageName),
 		TotalAmount:       0,
 		Balance:           0,
 		DailyOrderLimit:   item.DailyOrderLimit,

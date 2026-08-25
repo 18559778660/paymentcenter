@@ -2,7 +2,11 @@ package controller
 
 import (
 	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -115,6 +119,74 @@ func (m *ChannelController) SetStatus(c *gin.Context) {
 		return
 	}
 	response.Success(c, item)
+}
+
+// UploadPackage 上传并绑定通道压缩包。
+func (m *ChannelController) UploadPackage(c *gin.Context) {
+	id, err := parseChannelID(c)
+	if err != nil {
+		response.Fail(c, "无效的通道ID")
+		return
+	}
+	file, err := c.FormFile("file")
+	if err != nil {
+		response.Fail(c, "请选择压缩包")
+		return
+	}
+	if file.Size > 50*1024*1024 {
+		response.Fail(c, "压缩包不能超过 50MB")
+		return
+	}
+	ext := strings.ToLower(filepath.Ext(file.Filename))
+	switch ext {
+	case ".zip", ".rar", ".7z":
+	default:
+		response.Fail(c, "仅支持 zip/rar/7z")
+		return
+	}
+	relativePath := service.BuildChannelPackageRelativePath(id, file.Filename)
+	absPath := filepath.Join("uploads", filepath.FromSlash(relativePath))
+	if err := os.MkdirAll(filepath.Dir(absPath), 0o755); err != nil {
+		response.Fail(c, "上传失败")
+		return
+	}
+	if err := c.SaveUploadedFile(file, absPath); err != nil {
+		response.Fail(c, "上传失败")
+		return
+	}
+	item, err := m.app.SetChannelPackage(id, relativePath, operatorName(c))
+	if err != nil {
+		writeChannelError(c, err)
+		return
+	}
+	response.SuccessMsg(c, item, "上传成功")
+}
+
+// DownloadPackage 下载通道压缩包。
+func (m *ChannelController) DownloadPackage(c *gin.Context) {
+	id, err := parseChannelID(c)
+	if err != nil {
+		response.Fail(c, "无效的通道ID")
+		return
+	}
+	absPath, downloadName, err := m.app.ChannelPackageFile(id)
+	if err != nil {
+		writeChannelPackageError(c, err)
+		return
+	}
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", downloadName))
+	c.File(absPath)
+}
+
+func writeChannelPackageError(c *gin.Context, err error) {
+	switch {
+	case errors.Is(err, service.ErrChannelNotFound):
+		response.Fail(c, "通道不存在")
+	case errors.Is(err, service.ErrChannelPackageNotFound):
+		response.Fail(c, "压缩包不存在")
+	default:
+		response.Fail(c, err.Error())
+	}
 }
 
 func parseChannelID(c *gin.Context) (uint, error) {
