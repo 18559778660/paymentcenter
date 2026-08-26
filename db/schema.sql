@@ -143,3 +143,19 @@ CREATE TABLE IF NOT EXISTS channels (
   UNIQUE KEY idx_channels_name (name),
   KEY idx_channels_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='支付通道配置表';
+
+CREATE TABLE IF NOT EXISTS site_as (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'A站ID',
+  merchant_id BIGINT UNSIGNED NOT NULL COMMENT '商户ID',
+  domain VARCHAR(191) NOT NULL COMMENT '域名',
+  framework VARCHAR(32) NOT NULL COMMENT '框架 woocommerce shopyy',
+  status VARCHAR(16) NOT NULL DEFAULT 'pending' COMMENT '状态 pending待审核 audited已审核 disabled禁用',
+  created_by VARCHAR(64) NOT NULL DEFAULT '' COMMENT '创建人',
+  updated_by VARCHAR(64) NOT NULL DEFAULT '' COMMENT '更新人',
+  created_at DATETIME NULL COMMENT '创建时间',
+  updated_at DATETIME NULL COMMENT '更新时间',
+  PRIMARY KEY (id),
+  UNIQUE KEY idx_site_as_domain (domain),
+  KEY idx_site_as_merchant_id (merchant_id),
+  KEY idx_site_as_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='A站管理表';

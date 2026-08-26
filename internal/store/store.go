@@ -34,6 +34,7 @@ func NewMySQLStore(dsn string) (*MySQLStore, error) {
 		&model.Currency{},
 		&model.Country{},
 		&model.Channel{},
+		&model.SiteA{},
 	); err != nil {
 		return nil, err
 	}
@@ -777,4 +778,70 @@ func (s *MySQLStore) ListChannels(filter ChannelListFilter) ([]model.Channel, er
 	var list []model.Channel
 	err := q.Order("id DESC").Find(&list).Error
 	return list, err
+}
+
+// SiteAListFilter A 站列表筛选。
+type SiteAListFilter struct {
+	MerchantID *uint
+	Domain     string
+	Status     string
+}
+
+// CreateSiteA 插入 A 站。
+func (s *MySQLStore) CreateSiteA(item *model.SiteA) error {
+	return s.db.Create(item).Error
+}
+
+// GetSiteAByID 按主键查 A 站。
+func (s *MySQLStore) GetSiteAByID(id uint) (*model.SiteA, error) {
+	var item model.SiteA
+	tx := s.db.Where("id = ?", id).Limit(1).Find(&item)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return nil, ErrNotFound
+	}
+	return &item, nil
+}
+
+// FindSiteAByDomain 按域名查 A 站。
+func (s *MySQLStore) FindSiteAByDomain(domain string) (*model.SiteA, error) {
+	var item model.SiteA
+	tx := s.db.Where("domain = ?", domain).Limit(1).Find(&item)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return nil, ErrNotFound
+	}
+	return &item, nil
+}
+
+// ListSiteAs 按条件查询 A 站，按 id 倒序。
+func (s *MySQLStore) ListSiteAs(filter SiteAListFilter) ([]model.SiteA, error) {
+	q := s.db.Model(&model.SiteA{})
+	if filter.MerchantID != nil {
+		q = q.Where("merchant_id = ?", *filter.MerchantID)
+	}
+	if filter.Domain != "" {
+		q = q.Where("domain LIKE ?", "%"+filter.Domain+"%")
+	}
+	if filter.Status != "" {
+		q = q.Where("status = ?", filter.Status)
+	}
+	var list []model.SiteA
+	err := q.Order("id DESC").Find(&list).Error
+	return list, err
+}
+
+// BatchUpdateSiteAStatus 批量更新 A 站状态。
+func (s *MySQLStore) BatchUpdateSiteAStatus(ids []uint, status, operator string) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	return s.db.Model(&model.SiteA{}).Where("id IN ?", ids).Updates(map[string]interface{}{
+		"status":     status,
+		"updated_by": operator,
+	}).Error
 }

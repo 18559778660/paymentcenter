@@ -78,6 +78,11 @@ type Store interface {
 	GetChannelByID(id uint) (*model.Channel, error)
 	FindChannelByName(name string) (*model.Channel, error)
 	ListChannels(filter store.ChannelListFilter) ([]model.Channel, error)
+	CreateSiteA(item *model.SiteA) error
+	GetSiteAByID(id uint) (*model.SiteA, error)
+	FindSiteAByDomain(domain string) (*model.SiteA, error)
+	ListSiteAs(filter store.SiteAListFilter) ([]model.SiteA, error)
+	BatchUpdateSiteAStatus(ids []uint, status, operator string) error
 }
 
 // App 业务层入口。各业务方法拆在同包的 auth.go / menu.go / order.go / seed.go。

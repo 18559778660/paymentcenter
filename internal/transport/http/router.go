@@ -31,6 +31,7 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 	currencyController := controller.NewCurrencyController(app)
 	countryController := controller.NewCountryController(app)
 	channelController := controller.NewChannelController(app)
+	siteAController := controller.NewSiteAController(app)
 	gatewayController := controller.NewGatewayController(app)
 	orderController := controller.NewOrderController(app)
 
@@ -104,6 +105,11 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 			authed.PUT("/channels/:id/status", channelController.SetStatus)
 			authed.POST("/channels/:id/package", channelController.UploadPackage)
 			authed.GET("/channels/:id/package", channelController.DownloadPackage)
+
+			// A 站管理
+			authed.GET("/site-as", siteAController.List)
+			authed.POST("/site-as", siteAController.Create)
+			authed.PUT("/site-as/batch-status", siteAController.BatchStatus)
 
 			// 健康检查
 			authed.GET("/health", healthController.Health)
