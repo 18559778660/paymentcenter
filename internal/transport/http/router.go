@@ -32,6 +32,7 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 	countryController := controller.NewCountryController(app)
 	channelController := controller.NewChannelController(app)
 	siteAController := controller.NewSiteAController(app)
+	siteBController := controller.NewSiteBController(app)
 	gatewayController := controller.NewGatewayController(app)
 	orderController := controller.NewOrderController(app)
 
@@ -110,6 +111,12 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 			authed.GET("/site-as", siteAController.List)
 			authed.POST("/site-as", siteAController.Create)
 			authed.PUT("/site-as/batch-status", siteAController.BatchStatus)
+
+			// B 站管理
+			authed.GET("/site-bs", siteBController.List)
+			authed.POST("/site-bs", siteBController.Create)
+			authed.PUT("/site-bs/:id", siteBController.Update)
+			authed.PUT("/site-bs/:id/status", siteBController.SetStatus)
 
 			// 健康检查
 			authed.GET("/health", healthController.Health)

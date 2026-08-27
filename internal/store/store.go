@@ -35,6 +35,7 @@ func NewMySQLStore(dsn string) (*MySQLStore, error) {
 		&model.Country{},
 		&model.Channel{},
 		&model.SiteA{},
+		&model.SiteB{},
 	); err != nil {
 		return nil, err
 	}
@@ -844,4 +845,72 @@ func (s *MySQLStore) BatchUpdateSiteAStatus(ids []uint, status, operator string)
 		"status":     status,
 		"updated_by": operator,
 	}).Error
+}
+
+// SiteBListFilter B 站列表筛选。
+type SiteBListFilter struct {
+	ID       *uint
+	Domain   string
+	Remark   string
+	Status   *bool
+	Platform string
+}
+
+// CreateSiteB 插入 B 站。
+func (s *MySQLStore) CreateSiteB(item *model.SiteB) error {
+	return s.db.Create(item).Error
+}
+
+// SaveSiteB 更新 B 站。
+func (s *MySQLStore) SaveSiteB(item *model.SiteB) error {
+	return s.db.Save(item).Error
+}
+
+// GetSiteBByID 按主键查 B 站。
+func (s *MySQLStore) GetSiteBByID(id uint) (*model.SiteB, error) {
+	var item model.SiteB
+	tx := s.db.Where("id = ?", id).Limit(1).Find(&item)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return nil, ErrNotFound
+	}
+	return &item, nil
+}
+
+// FindSiteBByDomain 按域名查 B 站。
+func (s *MySQLStore) FindSiteBByDomain(domain string) (*model.SiteB, error) {
+	var item model.SiteB
+	tx := s.db.Where("domain = ?", domain).Limit(1).Find(&item)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return nil, ErrNotFound
+	}
+	return &item, nil
+}
+
+// ListSiteBs 按条件查询 B 站，按 id 倒序。
+func (s *MySQLStore) ListSiteBs(filter SiteBListFilter) ([]model.SiteB, error) {
+	q := s.db.Model(&model.SiteB{})
+	if filter.ID != nil {
+		q = q.Where("id = ?", *filter.ID)
+	}
+	if filter.Domain != "" {
+		q = q.Where("domain LIKE ?", "%"+filter.Domain+"%")
+	}
+	if filter.Remark != "" {
+		q = q.Where("remark LIKE ?", "%"+filter.Remark+"%")
+	}
+	if filter.Platform != "" {
+		q = q.Where("platform = ?", filter.Platform)
+	}
+	if filter.Status != nil {
+		q = q.Where("status = ?", *filter.Status)
+	}
+	var list []model.SiteB
+	err := q.Order("id DESC").Find(&list).Error
+	return list, err
 }

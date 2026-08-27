@@ -83,6 +83,11 @@ type Store interface {
 	FindSiteAByDomain(domain string) (*model.SiteA, error)
 	ListSiteAs(filter store.SiteAListFilter) ([]model.SiteA, error)
 	BatchUpdateSiteAStatus(ids []uint, status, operator string) error
+	CreateSiteB(item *model.SiteB) error
+	SaveSiteB(item *model.SiteB) error
+	GetSiteBByID(id uint) (*model.SiteB, error)
+	FindSiteBByDomain(domain string) (*model.SiteB, error)
+	ListSiteBs(filter store.SiteBListFilter) ([]model.SiteB, error)
 }
 
 // App 业务层入口。各业务方法拆在同包的 auth.go / menu.go / order.go / seed.go。

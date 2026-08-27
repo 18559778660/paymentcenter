@@ -159,3 +159,26 @@ CREATE TABLE IF NOT EXISTS site_as (
   KEY idx_site_as_merchant_id (merchant_id),
   KEY idx_site_as_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='A站管理表';
+
+CREATE TABLE IF NOT EXISTS site_bs (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'B站ID',
+  domain VARCHAR(191) NOT NULL COMMENT '域名',
+  platform VARCHAR(64) NOT NULL COMMENT '通道名称',
+  framework VARCHAR(32) NOT NULL COMMENT '框架',
+  status TINYINT(1) NOT NULL DEFAULT 1 COMMENT '状态 1启用 0停用',
+  channel_enabled TINYINT(1) NOT NULL DEFAULT 1 COMMENT '通道启用 1启用 0停用',
+  is_ftp TINYINT(1) NOT NULL DEFAULT 1 COMMENT '是否FTP 1是 0否',
+  host VARCHAR(255) NOT NULL DEFAULT '' COMMENT '主机',
+  account VARCHAR(128) NOT NULL DEFAULT '' COMMENT '账号',
+  password VARCHAR(128) NOT NULL DEFAULT '' COMMENT '密码',
+  run_directory VARCHAR(64) NOT NULL DEFAULT 'deal' COMMENT '运行目录',
+  remark VARCHAR(512) NOT NULL DEFAULT '' COMMENT '备注',
+  created_by VARCHAR(64) NOT NULL DEFAULT '' COMMENT '创建人',
+  updated_by VARCHAR(64) NOT NULL DEFAULT '' COMMENT '更新人',
+  created_at DATETIME NULL COMMENT '创建时间',
+  updated_at DATETIME NULL COMMENT '更新时间',
+  PRIMARY KEY (id),
+  UNIQUE KEY idx_site_bs_domain (domain),
+  KEY idx_site_bs_platform (platform),
+  KEY idx_site_bs_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='B站管理表';
