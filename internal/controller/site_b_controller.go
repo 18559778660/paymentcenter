@@ -23,9 +23,15 @@ func NewSiteBController(app *service.App) *SiteBController {
 // List B 站列表。
 func (m *SiteBController) List(c *gin.Context) {
 	q := service.SiteBListQuery{
-		Domain:   c.Query("domain"),
-		Remark:   c.Query("remark"),
-		Platform: c.Query("platform"),
+		Domain: c.Query("domain"),
+		Remark: c.Query("remark"),
+	}
+	if v := c.Query("platformId"); v != "" {
+		id, err := strconv.ParseUint(v, 10, 64)
+		if err == nil {
+			platformID := uint(id)
+			q.PlatformID = &platformID
+		}
 	}
 	if v := c.Query("id"); v != "" {
 		id, err := strconv.ParseUint(v, 10, 64)
@@ -118,7 +124,7 @@ func writeSiteBError(c *gin.Context, err error) {
 	case errors.Is(err, service.ErrSiteBDomainInvalid):
 		response.Fail(c, "请输入有效域名")
 	case errors.Is(err, service.ErrSiteBPlatformInvalid):
-		response.Fail(c, "请选择有效通道")
+		response.Fail(c, "请选择有效通道平台")
 	case errors.Is(err, service.ErrSiteBFrameworkInvalid):
 		response.Fail(c, "请选择有效框架")
 	default:

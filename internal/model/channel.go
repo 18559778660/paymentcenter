@@ -13,6 +13,8 @@ type Channel struct {
 	ID uint `gorm:"column:id;primaryKey;autoIncrement;comment:通道ID" json:"id"`
 	// Name 通道名称，全局唯一。
 	Name string `gorm:"column:name;type:varchar(64);not null;uniqueIndex;comment:通道名称" json:"name"`
+	// PlatformID 所属通道平台 ID。
+	PlatformID uint `gorm:"column:platform_id;not null;index;comment:通道平台ID" json:"platform_id"`
 	// PackageName 关联压缩包文件名。
 	PackageName string `gorm:"column:package_name;type:varchar(128);not null;default:'';comment:压缩包文件名" json:"package_name"`
 	// DailyOrderLimit 日限单数，0 表示不限制。

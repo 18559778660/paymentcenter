@@ -41,8 +41,11 @@ func (a *App) SetChannelPackage(id uint, relativePath, operator string) (*Channe
 	if oldPath != "" && oldPath != relativePath {
 		removeChannelPackageFile(oldPath)
 	}
-	out := a.toChannelListItem(*item)
-	return &out, nil
+	out, err := a.buildChannelListItem(*item)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 // ChannelPackageFile 返回通道压缩包绝对路径与下载文件名。

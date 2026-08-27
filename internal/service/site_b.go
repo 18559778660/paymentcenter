@@ -22,7 +22,9 @@ type SiteBListItem struct {
 	Domain         string `json:"domain"`
 	Channel        string `json:"channel"`
 	ChannelEnabled bool   `json:"channelEnabled"`
+	PlatformID     uint   `json:"platformId"`
 	Platform       string `json:"platform"`
+	PlatformName   string `json:"platformName"`
 	Framework      string `json:"framework"`
 	Status         bool   `json:"status"`
 	IsFtp          bool   `json:"isFtp"`
@@ -40,22 +42,22 @@ type SiteBListItem struct {
 
 // SiteBListQuery 列表筛选。
 type SiteBListQuery struct {
-	ID       *uint
-	Domain   string
-	Remark   string
-	Status   *bool
-	Platform string
+	ID         *uint
+	Domain     string
+	Remark     string
+	Status     *bool
+	PlatformID *uint
 }
 
 // CreateSiteBRequest 新增 B 站。
 type CreateSiteBRequest struct {
-	Domain    string `json:"domain" binding:"required"`
-	Platform  string `json:"platform"`
-	Framework string `json:"framework"`
-	IsFtp     *bool  `json:"isFtp"`
-	Host      string `json:"host"`
-	Account   string `json:"account"`
-	Password  string `json:"password"`
+	Domain     string `json:"domain" binding:"required"`
+	PlatformID uint   `json:"platformId" binding:"required"`
+	Framework  string `json:"framework"`
+	IsFtp      *bool  `json:"isFtp"`
+	Host       string `json:"host"`
+	Account    string `json:"account"`
+	Password   string `json:"password"`
 }
 
 // UpdateSiteBRequest 编辑 B 站 FTP 信息。
@@ -73,22 +75,26 @@ type SetSiteBStatusRequest struct {
 // ListSiteBs 查询 B 站列表。
 func (a *App) ListSiteBs(q SiteBListQuery) ([]SiteBListItem, error) {
 	list, err := a.store.ListSiteBs(store.SiteBListFilter{
-		ID:       q.ID,
-		Domain:   q.Domain,
-		Remark:   q.Remark,
-		Status:   q.Status,
-		Platform: q.Platform,
+		ID:         q.ID,
+		Domain:     q.Domain,
+		Remark:     q.Remark,
+		Status:     q.Status,
+		PlatformID: q.PlatformID,
 	})
 	if err != nil {
 		return nil, err
 	}
-	channelStatus, err := a.loadChannelStatusMap()
+	platformMap, err := a.loadPlatformMetaMap()
+	if err != nil {
+		return nil, err
+	}
+	platformStatus, err := a.loadPlatformChannelStatusMap()
 	if err != nil {
 		return nil, err
 	}
 	out := make([]SiteBListItem, 0, len(list))
 	for _, item := range list {
-		out = append(out, toSiteBListItem(item, channelStatus))
+		out = append(out, toSiteBListItem(item, platformMap, platformStatus))
 	}
 	return out, nil
 }
@@ -99,9 +105,9 @@ func (a *App) CreateSiteB(req CreateSiteBRequest, operator string) (*SiteBListIt
 	if err != nil {
 		return nil, err
 	}
-	platform, channelEnabled, err := a.normalizeSiteBPlatform(req.Platform)
+	platform, err := a.getPlatformByID(req.PlatformID)
 	if err != nil {
-		return nil, err
+		return nil, ErrSiteBPlatformInvalid
 	}
 	framework, err := normalizeSiteBFramework(req.Framework)
 	if err != nil {
@@ -112,16 +118,20 @@ func (a *App) CreateSiteB(req CreateSiteBRequest, operator string) (*SiteBListIt
 	} else if err != nil && !isNotFound(err) {
 		return nil, err
 	}
+	platformStatus, err := a.loadPlatformChannelStatusMap()
+	if err != nil {
+		return nil, err
+	}
 	isFtp := true
 	if req.IsFtp != nil {
 		isFtp = *req.IsFtp
 	}
 	item := &model.SiteB{
 		Domain:         domain,
-		Platform:       platform,
+		PlatformID:     platform.ID,
 		Framework:      framework,
 		Status:         true,
-		ChannelEnabled: channelEnabled,
+		ChannelEnabled: platformStatus[platform.ID],
 		IsFtp:          isFtp,
 		Host:           strings.TrimSpace(req.Host),
 		Account:        strings.TrimSpace(req.Account),
@@ -172,14 +182,21 @@ func (a *App) SetSiteBStatus(id uint, req SetSiteBStatusRequest, operator string
 	return a.getSiteBItem(item.ID)
 }
 
-func (a *App) loadChannelStatusMap() (map[string]bool, error) {
+func (a *App) loadPlatformChannelStatusMap() (map[uint]bool, error) {
 	channels, err := a.store.ListChannels(store.ChannelListFilter{})
 	if err != nil {
 		return nil, err
 	}
-	result := make(map[string]bool, len(channels))
+	result := map[uint]bool{}
 	for _, channel := range channels {
-		result[channel.Name] = channel.Status == model.ChannelStatusEnabled
+		if channel.PlatformID == 0 {
+			continue
+		}
+		if channel.Status == model.ChannelStatusEnabled {
+			result[channel.PlatformID] = true
+		} else if _, ok := result[channel.PlatformID]; !ok {
+			result[channel.PlatformID] = false
+		}
 	}
 	return result, nil
 }
@@ -192,25 +209,34 @@ func (a *App) getSiteBItem(id uint) (*SiteBListItem, error) {
 		}
 		return nil, err
 	}
-	channelStatus, err := a.loadChannelStatusMap()
+	platformMap, err := a.loadPlatformMetaMap()
 	if err != nil {
 		return nil, err
 	}
-	out := toSiteBListItem(*item, channelStatus)
+	platformStatus, err := a.loadPlatformChannelStatusMap()
+	if err != nil {
+		return nil, err
+	}
+	out := toSiteBListItem(*item, platformMap, platformStatus)
 	return &out, nil
 }
 
-func toSiteBListItem(item model.SiteB, channelStatus map[string]bool) SiteBListItem {
-	channelEnabled := item.ChannelEnabled
-	if enabled, ok := channelStatus[item.Platform]; ok {
-		channelEnabled = enabled
+func toSiteBListItem(item model.SiteB, platformMap map[uint]model.Platform, platformStatus map[uint]bool) SiteBListItem {
+	platformCode := ""
+	platformName := ""
+	if platform, ok := platformMap[item.PlatformID]; ok {
+		platformCode = platform.Code
+		platformName = platform.Name
 	}
+	channelEnabled := platformStatus[item.PlatformID]
 	return SiteBListItem{
 		ID:             item.ID,
 		Domain:         item.Domain,
-		Channel:        item.Platform,
+		Channel:        platformCode,
 		ChannelEnabled: channelEnabled,
-		Platform:       item.Platform,
+		PlatformID:     item.PlatformID,
+		Platform:       platformCode,
+		PlatformName:   platformName,
 		Framework:      item.Framework,
 		Status:         item.Status,
 		IsFtp:          item.IsFtp,
@@ -251,25 +277,6 @@ func normalizeSiteBDomain(domain string) (string, error) {
 		return "", ErrSiteBDomainInvalid
 	}
 	return domain, nil
-}
-
-func normalizeSiteBPlatform(platform string, lookup func(name string) (*model.Channel, error)) (string, bool, error) {
-	platform = strings.TrimSpace(platform)
-	if platform == "" {
-		return "", false, ErrSiteBPlatformInvalid
-	}
-	channel, err := lookup(platform)
-	if err != nil {
-		if isNotFound(err) {
-			return "", false, ErrSiteBPlatformInvalid
-		}
-		return "", false, err
-	}
-	return channel.Name, channel.Status == model.ChannelStatusEnabled, nil
-}
-
-func (a *App) normalizeSiteBPlatform(platform string) (string, bool, error) {
-	return normalizeSiteBPlatform(platform, a.store.FindChannelByName)
 }
 
 func normalizeSiteBFramework(framework string) (string, error) {

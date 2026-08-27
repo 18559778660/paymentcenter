@@ -14,7 +14,7 @@ const (
 type SiteB struct {
 	ID             uint      `gorm:"column:id;primaryKey;autoIncrement;comment:B站ID" json:"id"`
 	Domain         string    `gorm:"column:domain;type:varchar(191);not null;uniqueIndex;comment:域名" json:"domain"`
-	Platform       string    `gorm:"column:platform;type:varchar(64);not null;index;comment:通道名称" json:"platform"`
+	PlatformID     uint      `gorm:"column:platform_id;not null;index;comment:通道平台ID" json:"platform_id"`
 	Framework      string    `gorm:"column:framework;type:varchar(32);not null;comment:框架" json:"framework"`
 	Status         bool      `gorm:"column:status;not null;default:1;index;comment:状态 1启用 0停用" json:"status"`
 	ChannelEnabled bool      `gorm:"column:channel_enabled;not null;default:1;comment:通道启用 1启用 0停用" json:"channel_enabled"`

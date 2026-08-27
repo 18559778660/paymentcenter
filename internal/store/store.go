@@ -33,6 +33,7 @@ func NewMySQLStore(dsn string) (*MySQLStore, error) {
 		&model.CardType{},
 		&model.Currency{},
 		&model.Country{},
+		&model.Platform{},
 		&model.Channel{},
 		&model.SiteA{},
 		&model.SiteB{},
@@ -853,7 +854,7 @@ type SiteBListFilter struct {
 	Domain   string
 	Remark   string
 	Status   *bool
-	Platform string
+	PlatformID *uint
 }
 
 // CreateSiteB 插入 B 站。
@@ -904,8 +905,8 @@ func (s *MySQLStore) ListSiteBs(filter SiteBListFilter) ([]model.SiteB, error) {
 	if filter.Remark != "" {
 		q = q.Where("remark LIKE ?", "%"+filter.Remark+"%")
 	}
-	if filter.Platform != "" {
-		q = q.Where("platform = ?", filter.Platform)
+	if filter.PlatformID != nil {
+		q = q.Where("platform_id = ?", *filter.PlatformID)
 	}
 	if filter.Status != nil {
 		q = q.Where("status = ?", *filter.Status)
@@ -913,4 +914,78 @@ func (s *MySQLStore) ListSiteBs(filter SiteBListFilter) ([]model.SiteB, error) {
 	var list []model.SiteB
 	err := q.Order("id DESC").Find(&list).Error
 	return list, err
+}
+
+// CreatePlatform 插入平台。
+func (s *MySQLStore) CreatePlatform(item *model.Platform) error {
+	return s.db.Create(item).Error
+}
+
+// FindPlatformByCode 按编码查平台。
+func (s *MySQLStore) FindPlatformByCode(code string) (*model.Platform, error) {
+	var item model.Platform
+	tx := s.db.Where("code = ?", code).Limit(1).Find(&item)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return nil, ErrNotFound
+	}
+	return &item, nil
+}
+
+// GetPlatformByID 按主键查平台。
+func (s *MySQLStore) GetPlatformByID(id uint) (*model.Platform, error) {
+	var item model.Platform
+	tx := s.db.Where("id = ?", id).Limit(1).Find(&item)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return nil, ErrNotFound
+	}
+	return &item, nil
+}
+
+// ListPlatforms 查询全部平台，按 sort、id 升序。
+func (s *MySQLStore) ListPlatforms() ([]model.Platform, error) {
+	var list []model.Platform
+	err := s.db.Order("sort ASC, id ASC").Find(&list).Error
+	return list, err
+}
+
+// MigrateLegacyPlatformData 将旧 platform 字符串列回填到 platform_id。
+func (s *MySQLStore) MigrateLegacyPlatformData(codes map[string]uint) error {
+	if s.db.Migrator().HasColumn("channels", "platform") {
+		for code, id := range codes {
+			if err := s.db.Exec(
+				"UPDATE channels SET platform_id = ? WHERE platform = ? AND platform_id = 0",
+				id, code,
+			).Error; err != nil {
+				return err
+			}
+		}
+	}
+	if s.db.Migrator().HasColumn("site_bs", "platform") {
+		for code, id := range codes {
+			if err := s.db.Exec(
+				"UPDATE site_bs SET platform_id = ? WHERE platform = ? AND platform_id = 0",
+				id, code,
+			).Error; err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// BackfillDefaultPlatformID 将 platform_id 为 0 的记录补成默认平台。
+func (s *MySQLStore) BackfillDefaultPlatformID(defaultID uint) error {
+	if defaultID == 0 {
+		return nil
+	}
+	if err := s.db.Model(&model.Channel{}).Where("platform_id = 0").Update("platform_id", defaultID).Error; err != nil {
+		return err
+	}
+	return s.db.Model(&model.SiteB{}).Where("platform_id = 0").Update("platform_id", defaultID).Error
 }

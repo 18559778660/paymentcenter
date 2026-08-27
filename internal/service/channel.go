@@ -14,12 +14,16 @@ var (
 	ErrChannelNameInvalid          = errors.New("channel name invalid")
 	ErrChannelInterceptRangeInvalid = errors.New("channel intercept range invalid")
 	ErrChannelSuccessSettingInvalid   = errors.New("channel success setting invalid")
+	ErrChannelPlatformInvalid         = errors.New("channel platform invalid")
 )
 
 // ChannelListItem 通道列表行，字段与前端 ChannelRow 对齐。
 type ChannelListItem struct {
 	ID                uint     `json:"id"`
 	Name              string   `json:"name"`
+	PlatformID        uint     `json:"platformId"`
+	Platform          string   `json:"platform"`
+	PlatformName      string   `json:"platformName"`
 	PackageName       string   `json:"packageName"`
 	PackageURL        string   `json:"packageUrl"`
 	TotalAmount       float64  `json:"totalAmount"`
@@ -84,6 +88,7 @@ type ChannelListQuery struct {
 // CreateChannelRequest 新增通道。
 type CreateChannelRequest struct {
 	Name              string `json:"name" binding:"required"`
+	PlatformID        uint   `json:"platformId" binding:"required"`
 	PaymentMode       string `json:"paymentMode"`
 	SiteBGroup        string `json:"siteBGroup"`
 	OrderNoMode       string `json:"orderNoMode"`
@@ -150,9 +155,13 @@ func (a *App) ListChannels(q ChannelListQuery) ([]ChannelListItem, error) {
 	if err != nil {
 		return nil, err
 	}
+	platformMap, err := a.loadPlatformMetaMap()
+	if err != nil {
+		return nil, err
+	}
 	out := make([]ChannelListItem, 0, len(list))
 	for _, item := range list {
-		out = append(out, a.toChannelListItem(item))
+		out = append(out, a.toChannelListItem(item, platformMap))
 	}
 	return out, nil
 }
@@ -168,8 +177,13 @@ func (a *App) CreateChannel(req CreateChannelRequest, operator string) (*Channel
 	} else if err != nil && !isNotFound(err) {
 		return nil, err
 	}
+	platform, err := a.getPlatformByID(req.PlatformID)
+	if err != nil {
+		return nil, err
+	}
 	item := &model.Channel{
 		Name:              name,
+		PlatformID:        platform.ID,
 		PackageName:       "",
 		DailyOrderLimit:   0,
 		DailyAmountLimit:  0,
@@ -218,8 +232,7 @@ func (a *App) CreateChannel(req CreateChannelRequest, operator string) (*Channel
 	if err := a.store.CreateChannel(item); err != nil {
 		return nil, err
 	}
-	out := a.toChannelListItem(*item)
-	return &out, nil
+	return a.buildChannelListItem(*item)
 }
 
 // UpdateChannel 编辑通道信息。
@@ -270,8 +283,7 @@ func (a *App) UpdateChannel(id uint, req UpdateChannelRequest, operator string) 
 	if err := a.store.SaveChannel(item); err != nil {
 		return nil, err
 	}
-	out := a.toChannelListItem(*item)
-	return &out, nil
+	return a.buildChannelListItem(*item)
 }
 
 // UpdateChannelLimits 更新限制配置。
@@ -314,8 +326,7 @@ func (a *App) UpdateChannelLimits(id uint, req UpdateChannelLimitsRequest, opera
 	if err := a.store.SaveChannel(item); err != nil {
 		return nil, err
 	}
-	out := a.toChannelListItem(*item)
-	return &out, nil
+	return a.buildChannelListItem(*item)
 }
 
 // SetChannelStatus 启用/禁用通道。
@@ -336,18 +347,35 @@ func (a *App) SetChannelStatus(id uint, enabled bool, operator string) (*Channel
 	if err := a.store.SaveChannel(item); err != nil {
 		return nil, err
 	}
-	out := a.toChannelListItem(*item)
+	return a.buildChannelListItem(*item)
+}
+
+func (a *App) buildChannelListItem(item model.Channel) (*ChannelListItem, error) {
+	platformMap, err := a.loadPlatformMetaMap()
+	if err != nil {
+		return nil, err
+	}
+	out := a.toChannelListItem(item, platformMap)
 	return &out, nil
 }
 
-func (a *App) toChannelListItem(item model.Channel) ChannelListItem {
+func (a *App) toChannelListItem(item model.Channel, platformMap map[uint]model.Platform) ChannelListItem {
 	countries := []string(item.Countries)
 	if len(countries) == 0 {
 		countries = []string(item.AllowCountries)
 	}
+	platformCode := ""
+	platformName := ""
+	if platform, ok := platformMap[item.PlatformID]; ok {
+		platformCode = platform.Code
+		platformName = platform.Name
+	}
 	return ChannelListItem{
 		ID:                item.ID,
 		Name:              item.Name,
+		PlatformID:        item.PlatformID,
+		Platform:          platformCode,
+		PlatformName:      platformName,
 		PackageName:       packageDisplayName(item.PackageName),
 		PackageURL:        a.BuildPackageURL(item.ID, item.PackageName),
 		TotalAmount:       0,

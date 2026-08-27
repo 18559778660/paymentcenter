@@ -44,6 +44,16 @@ func (m *ChannelController) List(c *gin.Context) {
 	response.Success(c, list)
 }
 
+// Platforms 通道平台分类下拉。
+func (m *ChannelController) Platforms(c *gin.Context) {
+	list, err := m.app.ListPlatformOptions()
+	if err != nil {
+		response.Fail(c, err.Error())
+		return
+	}
+	response.Success(c, list)
+}
+
 // Create 新增通道。
 func (m *ChannelController) Create(c *gin.Context) {
 	var req service.CreateChannelRequest
@@ -209,6 +219,8 @@ func writeChannelError(c *gin.Context, err error) {
 		response.Fail(c, "限制最小金额不能高于限制最大金额")
 	case errors.Is(err, service.ErrChannelSuccessSettingInvalid):
 		response.Fail(c, "成功设置需同时配置支付频率，以及成功次数或失败次数")
+	case errors.Is(err, service.ErrChannelPlatformInvalid):
+		response.Fail(c, "请选择有效通道平台")
 	default:
 		response.Fail(c, err.Error())
 	}

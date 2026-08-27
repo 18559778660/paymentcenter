@@ -88,6 +88,12 @@ type Store interface {
 	GetSiteBByID(id uint) (*model.SiteB, error)
 	FindSiteBByDomain(domain string) (*model.SiteB, error)
 	ListSiteBs(filter store.SiteBListFilter) ([]model.SiteB, error)
+	CreatePlatform(item *model.Platform) error
+	FindPlatformByCode(code string) (*model.Platform, error)
+	GetPlatformByID(id uint) (*model.Platform, error)
+	ListPlatforms() ([]model.Platform, error)
+	MigrateLegacyPlatformData(codes map[string]uint) error
+	BackfillDefaultPlatformID(defaultID uint) error
 }
 
 // App 业务层入口。各业务方法拆在同包的 auth.go / menu.go / order.go / seed.go。

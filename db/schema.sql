@@ -90,9 +90,23 @@ CREATE TABLE IF NOT EXISTS role_menus (
   KEY idx_role_menus_menu_id (menu_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS platforms (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '平台ID',
+  code VARCHAR(32) NOT NULL COMMENT '平台编码 stripe pp',
+  name VARCHAR(64) NOT NULL COMMENT '平台名称',
+  sort INT NOT NULL DEFAULT 0 COMMENT '排序',
+  status INT NOT NULL DEFAULT 1 COMMENT '状态 1启用 0禁用',
+  created_at DATETIME NULL COMMENT '创建时间',
+  updated_at DATETIME NULL COMMENT '更新时间',
+  PRIMARY KEY (id),
+  UNIQUE KEY idx_platforms_code (code),
+  KEY idx_platforms_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='通道平台分类表';
+
 CREATE TABLE IF NOT EXISTS channels (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '通道ID',
   name VARCHAR(64) NOT NULL COMMENT '通道名称',
+  platform_id BIGINT UNSIGNED NOT NULL COMMENT '通道平台ID',
   package_name VARCHAR(128) NOT NULL DEFAULT '' COMMENT '压缩包文件名',
   daily_order_limit INT NOT NULL DEFAULT 0 COMMENT '日限单数',
   daily_amount_limit DECIMAL(18,2) NOT NULL DEFAULT 0 COMMENT '日限金额USD',
@@ -141,6 +155,7 @@ CREATE TABLE IF NOT EXISTS channels (
   updated_at DATETIME NULL COMMENT '更新时间',
   PRIMARY KEY (id),
   UNIQUE KEY idx_channels_name (name),
+  KEY idx_channels_platform_id (platform_id),
   KEY idx_channels_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='支付通道配置表';
 
@@ -163,7 +178,7 @@ CREATE TABLE IF NOT EXISTS site_as (
 CREATE TABLE IF NOT EXISTS site_bs (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'B站ID',
   domain VARCHAR(191) NOT NULL COMMENT '域名',
-  platform VARCHAR(64) NOT NULL COMMENT '通道名称',
+  platform_id BIGINT UNSIGNED NOT NULL COMMENT '通道平台ID',
   framework VARCHAR(32) NOT NULL COMMENT '框架',
   status TINYINT(1) NOT NULL DEFAULT 1 COMMENT '状态 1启用 0停用',
   channel_enabled TINYINT(1) NOT NULL DEFAULT 1 COMMENT '通道启用 1启用 0停用',
@@ -179,6 +194,6 @@ CREATE TABLE IF NOT EXISTS site_bs (
   updated_at DATETIME NULL COMMENT '更新时间',
   PRIMARY KEY (id),
   UNIQUE KEY idx_site_bs_domain (domain),
-  KEY idx_site_bs_platform (platform),
+  KEY idx_site_bs_platform_id (platform_id),
   KEY idx_site_bs_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='B站管理表';

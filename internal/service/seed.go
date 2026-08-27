@@ -89,6 +89,9 @@ func (a *App) SeedRBAC(adminUsername, adminPassword string) error {
 	if err := a.ensureCountries(); err != nil {
 		return err
 	}
+	if err := a.ensurePlatforms(); err != nil {
+		return err
+	}
 
 	if adminUsername == "" || adminPassword == "" {
 		return nil
@@ -265,6 +268,45 @@ func (a *App) ensureCountries() error {
 		}
 	}
 	return nil
+}
+
+// ensurePlatforms 幂等写入默认通道平台，并回填旧数据的 platform_id。
+func (a *App) ensurePlatforms() error {
+	stripe, err := a.ensurePlatform(model.PlatformCodeStripe, "stripe", 1)
+	if err != nil {
+		return err
+	}
+	pp, err := a.ensurePlatform(model.PlatformCodePP, "pp", 2)
+	if err != nil {
+		return err
+	}
+	if err := a.store.MigrateLegacyPlatformData(map[string]uint{
+		model.PlatformCodeStripe: stripe.ID,
+		model.PlatformCodePP:     pp.ID,
+	}); err != nil {
+		return err
+	}
+	return a.store.BackfillDefaultPlatformID(stripe.ID)
+}
+
+func (a *App) ensurePlatform(code, name string, sort int) (*model.Platform, error) {
+	platform, err := a.store.FindPlatformByCode(code)
+	if err == nil {
+		return platform, nil
+	}
+	if !isNotFound(err) {
+		return nil, err
+	}
+	platform = &model.Platform{
+		Code:   code,
+		Name:   name,
+		Sort:   sort,
+		Status: model.PlatformStatusEnabled,
+	}
+	if err := a.store.CreatePlatform(platform); err != nil {
+		return nil, err
+	}
+	return platform, nil
 }
 
 // loadMenuSeeds 读取 menus.json。只给库里还不存在的菜单做插入。

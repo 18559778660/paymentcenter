@@ -100,6 +100,7 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 
 			// 通道列表
 			authed.GET("/channels", channelController.List)
+			authed.GET("/channels/platforms", channelController.Platforms)
 			authed.POST("/channels", channelController.Create)
 			authed.PUT("/channels/:id", channelController.Update)
 			authed.PUT("/channels/:id/limits", channelController.UpdateLimits)
