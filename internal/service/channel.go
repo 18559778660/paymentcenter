@@ -289,7 +289,6 @@ func (a *App) UpdateChannelLimits(id uint, req UpdateChannelLimitsRequest, opera
 	if err := validateSuccessSetting(req.PayFrequency, req.SuccessCount, req.FailCount); err != nil {
 		return nil, err
 	}
-	item.ChannelCode = strings.TrimSpace(req.ChannelCode)
 	item.DailyAmountLimit = req.DailyAmountLimit
 	item.PayFrequency = req.PayFrequency
 	item.FailCount = req.FailCount
