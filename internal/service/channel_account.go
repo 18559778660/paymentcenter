@@ -28,7 +28,7 @@ type ChannelAccountListItem struct {
 	Alias             string   `json:"alias"`
 	Remark            string   `json:"remark"`
 	PaymentMethod     string   `json:"paymentMethod"`
-	GroupName         string   `json:"groupName"`
+	GroupNames          []string `json:"groupNames"`
 	AssignedUser      string   `json:"assignedUser"`
 	TotalReceived     float64  `json:"totalReceived"`
 	Status            bool     `json:"status"`
@@ -79,7 +79,7 @@ type ChannelAccountListQuery struct {
 	Remark       string
 	CreatedFrom  string
 	CreatedTo    string
-	GroupName    string
+	GroupID      *uint
 	AssignedUser string
 	ListFilter   string
 }
@@ -151,7 +151,7 @@ func (a *App) ListChannelAccounts(q ChannelAccountListQuery) ([]ChannelAccountLi
 		Remark:       q.Remark,
 		CreatedFrom:  q.CreatedFrom,
 		CreatedTo:    q.CreatedTo,
-		GroupName:    q.GroupName,
+		GroupID:      q.GroupID,
 		AssignedUser: q.AssignedUser,
 		ListFilter:   q.ListFilter,
 	})
@@ -166,9 +166,17 @@ func (a *App) ListChannelAccounts(q ChannelAccountListQuery) ([]ChannelAccountLi
 	if err != nil {
 		return nil, err
 	}
+	groupMap, err := a.loadChannelAccountGroupNamesMap(list)
+	if err != nil {
+		return nil, err
+	}
 	out := make([]ChannelAccountListItem, 0, len(list))
 	for _, item := range list {
-		out = append(out, toChannelAccountListItem(item, channelMap, siteBMap))
+		groupNames := groupMap[item.ID]
+		if groupNames == nil {
+			groupNames = []string{}
+		}
+		out = append(out, toChannelAccountListItem(item, channelMap, siteBMap, groupNames))
 	}
 	return out, nil
 }
@@ -381,7 +389,15 @@ func (a *App) getChannelAccountItem(id uint) (*ChannelAccountListItem, error) {
 	if err != nil {
 		return nil, err
 	}
-	out := toChannelAccountListItem(*item, channelMap, siteBMap)
+	groupMap, err := a.loadChannelAccountGroupNamesMap([]model.ChannelAccount{*item})
+	if err != nil {
+		return nil, err
+	}
+	groupNames := groupMap[item.ID]
+	if groupNames == nil {
+		groupNames = []string{}
+	}
+	out := toChannelAccountListItem(*item, channelMap, siteBMap, groupNames)
 	return &out, nil
 }
 
@@ -409,7 +425,46 @@ func (a *App) loadSiteBDomainMap() (map[uint]string, error) {
 	return result, nil
 }
 
-func toChannelAccountListItem(item model.ChannelAccount, channelMap map[uint]string, siteBMap map[uint]string) ChannelAccountListItem {
+func (a *App) loadChannelGroupNameMap() (map[uint]string, error) {
+	list, err := a.store.ListChannelGroups(store.ChannelGroupListFilter{})
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[uint]string, len(list))
+	for _, item := range list {
+		result[item.ID] = item.Name
+	}
+	return result, nil
+}
+
+func (a *App) loadChannelAccountGroupNamesMap(accounts []model.ChannelAccount) (map[uint][]string, error) {
+	if len(accounts) == 0 {
+		return map[uint][]string{}, nil
+	}
+	accountIDs := make([]uint, 0, len(accounts))
+	for _, item := range accounts {
+		accountIDs = append(accountIDs, item.ID)
+	}
+	members, err := a.store.ListChannelGroupMembersByAccountIDs(accountIDs)
+	if err != nil {
+		return nil, err
+	}
+	groupNameMap, err := a.loadChannelGroupNameMap()
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[uint][]string, len(accounts))
+	for _, member := range members {
+		name := groupNameMap[member.GroupID]
+		if name == "" {
+			continue
+		}
+		result[member.ChannelAccountID] = append(result[member.ChannelAccountID], name)
+	}
+	return result, nil
+}
+
+func toChannelAccountListItem(item model.ChannelAccount, channelMap map[uint]string, siteBMap map[uint]string, groupNames []string) ChannelAccountListItem {
 	channelName := channelMap[item.ChannelID]
 	siteBDomain := siteBMap[item.SiteBID]
 	return ChannelAccountListItem{
@@ -422,7 +477,7 @@ func toChannelAccountListItem(item model.ChannelAccount, channelMap map[uint]str
 		Alias:             item.Alias,
 		Remark:            item.Remark,
 		PaymentMethod:     item.PaymentMethod,
-		GroupName:         item.GroupName,
+		GroupNames:        groupNames,
 		AssignedUser:      item.AssignedUser,
 		TotalReceived:     item.TotalReceived,
 		Status:            item.Status == model.ChannelAccountStatusEnabled,

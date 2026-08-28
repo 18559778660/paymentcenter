@@ -221,6 +221,98 @@ func (a *App) UpdateChannelGroup(id uint, req UpdateChannelGroupRequest, operato
 	return a.getChannelGroupItem(item.ID)
 }
 
+// ChannelGroupAccountItem 分组账号列表行。
+type ChannelGroupAccountItem struct {
+	ID            uint   `json:"id"`
+	ChannelName   string `json:"channelName"`
+	InGroup       bool   `json:"inGroup"`
+	AccountStatus bool   `json:"accountStatus"`
+	SiteB         string `json:"siteB"`
+	Channel       string `json:"channel"`
+	Remark        string `json:"remark"`
+	PaymentMethod string `json:"paymentMethod"`
+}
+
+// ChannelGroupAccountListQuery 分组账号列表筛选。
+type ChannelGroupAccountListQuery struct {
+	ChannelID *uint
+}
+
+// ListChannelGroupAccounts 列出全部通道账号，并标记是否归属当前分组。
+func (a *App) ListChannelGroupAccounts(groupID uint, q ChannelGroupAccountListQuery) ([]ChannelGroupAccountItem, error) {
+	group, err := a.store.GetChannelGroupByID(groupID)
+	if err != nil {
+		if isNotFound(err) {
+			return nil, ErrChannelGroupNotFound
+		}
+		return nil, err
+	}
+	accounts, err := a.store.ListChannelAccounts(store.ChannelAccountListFilter{})
+	if err != nil {
+		return nil, err
+	}
+	channelMap, err := a.loadChannelNameMap()
+	if err != nil {
+		return nil, err
+	}
+	siteBMap, err := a.loadSiteBDomainMap()
+	if err != nil {
+		return nil, err
+	}
+	memberAccountIDs, err := a.store.ListChannelGroupMemberAccountIDs(group.ID)
+	if err != nil {
+		return nil, err
+	}
+	memberSet := make(map[uint]struct{}, len(memberAccountIDs))
+	for _, accountID := range memberAccountIDs {
+		memberSet[accountID] = struct{}{}
+	}
+	out := make([]ChannelGroupAccountItem, 0, len(accounts))
+	for _, item := range accounts {
+		if q.ChannelID != nil && *q.ChannelID > 0 && item.ChannelID != *q.ChannelID {
+			continue
+		}
+		channelName := strings.TrimSpace(item.Alias)
+		if channelName == "" {
+			channelName = item.AccountNo
+		}
+		_, inGroup := memberSet[item.ID]
+		out = append(out, ChannelGroupAccountItem{
+			ID:            item.ID,
+			ChannelName:   channelName,
+			InGroup:       inGroup,
+			AccountStatus: item.Status == model.ChannelAccountStatusEnabled,
+			SiteB:         siteBMap[item.SiteBID],
+			Channel:       channelMap[item.ChannelID],
+			Remark:        item.Remark,
+			PaymentMethod: item.PaymentMethod,
+		})
+	}
+	return out, nil
+}
+
+// SetChannelGroupAccountMembership 设置账号是否归属分组。
+func (a *App) SetChannelGroupAccountMembership(groupID, accountID uint, inGroup bool, operator string) error {
+	group, err := a.store.GetChannelGroupByID(groupID)
+	if err != nil {
+		if isNotFound(err) {
+			return ErrChannelGroupNotFound
+		}
+		return err
+	}
+	account, err := a.store.GetChannelAccountByID(accountID)
+	if err != nil {
+		if isNotFound(err) {
+			return ErrChannelAccountNotFound
+		}
+		return err
+	}
+	if inGroup {
+		return a.store.AddChannelGroupMember(group.ID, account.ID)
+	}
+	return a.store.RemoveChannelGroupMember(group.ID, account.ID)
+}
+
 // BuildGroupGatewayURL 生成分组网关地址。
 func (a *App) BuildGroupGatewayURL(groupCode string) string {
 	groupCode = strings.TrimSpace(groupCode)
@@ -246,7 +338,7 @@ func (a *App) getChannelGroupItem(id uint) (*ChannelGroupListItem, error) {
 }
 
 func (a *App) toChannelGroupListItem(item model.ChannelGroup) (ChannelGroupListItem, error) {
-	availableCount, err := a.store.CountEnabledChannelAccountsByGroupName(item.Code)
+	availableCount, err := a.store.CountEnabledChannelAccountsByGroupID(item.ID)
 	if err != nil {
 		return ChannelGroupListItem{}, err
 	}

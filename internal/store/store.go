@@ -39,6 +39,7 @@ func NewMySQLStore(dsn string) (*MySQLStore, error) {
 		&model.SiteB{},
 		&model.ChannelAccount{},
 		&model.ChannelGroup{},
+		&model.ChannelGroupMember{},
 	); err != nil {
 		return nil, err
 	}
@@ -965,7 +966,7 @@ type ChannelAccountListFilter struct {
 	Remark       string
 	CreatedFrom  string
 	CreatedTo    string
-	GroupName    string
+	GroupID      *uint
 	AssignedUser string
 	ListFilter   string
 }
@@ -1027,8 +1028,12 @@ func (s *MySQLStore) ListChannelAccounts(filter ChannelAccountListFilter) ([]mod
 	if filter.CreatedTo != "" {
 		q = q.Where("DATE(channel_accounts.created_at) <= ?", filter.CreatedTo)
 	}
-	if filter.GroupName != "" {
-		q = q.Where("channel_accounts.group_name = ?", filter.GroupName)
+	if filter.GroupID != nil && *filter.GroupID > 0 {
+		q = q.Joins(`
+			INNER JOIN channel_group_members cgm
+				ON cgm.channel_account_id = channel_accounts.id
+				AND cgm.group_id = ?
+		`, *filter.GroupID)
 	}
 	if filter.AssignedUser != "" {
 		q = q.Where("channel_accounts.assigned_user = ?", filter.AssignedUser)
@@ -1119,11 +1124,54 @@ func (s *MySQLStore) ListChannelGroups(filter ChannelGroupListFilter) ([]model.C
 	return list, err
 }
 
-// CountEnabledChannelAccountsByGroupName 统计分组下启用的通道账号数。
-func (s *MySQLStore) CountEnabledChannelAccountsByGroupName(groupName string) (int64, error) {
+// CountEnabledChannelAccountsByGroupID 统计分组下启用的通道账号数。
+func (s *MySQLStore) CountEnabledChannelAccountsByGroupID(groupID uint) (int64, error) {
+	if groupID == 0 {
+		return 0, nil
+	}
 	var count int64
 	err := s.db.Model(&model.ChannelAccount{}).
-		Where("group_name = ? AND status = ?", groupName, model.ChannelAccountStatusEnabled).
+		Joins(`
+			INNER JOIN channel_group_members cgm
+				ON cgm.channel_account_id = channel_accounts.id
+				AND cgm.group_id = ?
+		`, groupID).
+		Where("channel_accounts.status = ?", model.ChannelAccountStatusEnabled).
 		Count(&count).Error
 	return count, err
+}
+
+// AddChannelGroupMember 添加分组与账号关系。
+func (s *MySQLStore) AddChannelGroupMember(groupID, accountID uint) error {
+	row := model.ChannelGroupMember{
+		GroupID:          groupID,
+		ChannelAccountID: accountID,
+	}
+	return s.db.Where("group_id = ? AND channel_account_id = ?", groupID, accountID).
+		FirstOrCreate(&row).Error
+}
+
+// RemoveChannelGroupMember 移除分组与账号关系。
+func (s *MySQLStore) RemoveChannelGroupMember(groupID, accountID uint) error {
+	return s.db.Where("group_id = ? AND channel_account_id = ?", groupID, accountID).
+		Delete(&model.ChannelGroupMember{}).Error
+}
+
+// ListChannelGroupMemberAccountIDs 查询分组下的账号 ID。
+func (s *MySQLStore) ListChannelGroupMemberAccountIDs(groupID uint) ([]uint, error) {
+	var accountIDs []uint
+	err := s.db.Model(&model.ChannelGroupMember{}).
+		Where("group_id = ?", groupID).
+		Pluck("channel_account_id", &accountIDs).Error
+	return accountIDs, err
+}
+
+// ListChannelGroupMembersByAccountIDs 查询若干账号所属的分组关系。
+func (s *MySQLStore) ListChannelGroupMembersByAccountIDs(accountIDs []uint) ([]model.ChannelGroupMember, error) {
+	if len(accountIDs) == 0 {
+		return []model.ChannelGroupMember{}, nil
+	}
+	var list []model.ChannelGroupMember
+	err := s.db.Where("channel_account_id IN ?", accountIDs).Find(&list).Error
+	return list, err
 }

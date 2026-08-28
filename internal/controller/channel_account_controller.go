@@ -28,9 +28,15 @@ func (m *ChannelAccountController) List(c *gin.Context) {
 		Remark:       c.Query("remark"),
 		CreatedFrom:  c.Query("createdFrom"),
 		CreatedTo:    c.Query("createdTo"),
-		GroupName:    c.Query("groupName"),
 		AssignedUser: c.Query("assignedUser"),
 		ListFilter:   c.Query("listFilter"),
+	}
+	if v := c.Query("groupId"); v != "" {
+		id, err := strconv.ParseUint(v, 10, 64)
+		if err == nil && id > 0 {
+			groupID := uint(id)
+			q.GroupID = &groupID
+		}
 	}
 	if v := c.Query("channelId"); v != "" {
 		id, err := strconv.ParseUint(v, 10, 64)

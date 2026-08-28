@@ -121,6 +121,8 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 			authed.GET("/channel-groups", channelGroupController.List)
 			authed.POST("/channel-groups", channelGroupController.Create)
 			authed.PUT("/channel-groups/:id", channelGroupController.Update)
+			authed.GET("/channel-groups/:id/accounts", channelGroupController.ListAccounts)
+			authed.PUT("/channel-groups/:id/accounts/:accountId/membership", channelGroupController.SetAccountMembership)
 
 			// A 站管理
 			authed.GET("/site-as", siteAController.List)
