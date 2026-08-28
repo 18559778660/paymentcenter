@@ -55,9 +55,10 @@ type CreateSiteBRequest struct {
 	PlatformID uint   `json:"platformId" binding:"required"`
 	Framework  string `json:"framework"`
 	IsFtp      *bool  `json:"isFtp"`
-	Host       string `json:"host"`
-	Account    string `json:"account"`
-	Password   string `json:"password"`
+	Host         string `json:"host"`
+	Account      string `json:"account"`
+	Password     string `json:"password"`
+	RunDirectory string `json:"runDirectory"`
 }
 
 // UpdateSiteBRequest 编辑 B 站 FTP 信息。
@@ -126,6 +127,10 @@ func (a *App) CreateSiteB(req CreateSiteBRequest, operator string) (*SiteBListIt
 	if req.IsFtp != nil {
 		isFtp = *req.IsFtp
 	}
+	runDirectory := strings.TrimSpace(req.RunDirectory)
+	if runDirectory == "" && platform.Code != model.PlatformCodeStripe {
+		runDirectory = model.SiteBDefaultRunDirectory
+	}
 	item := &model.SiteB{
 		Domain:         domain,
 		PlatformID:     platform.ID,
@@ -136,7 +141,7 @@ func (a *App) CreateSiteB(req CreateSiteBRequest, operator string) (*SiteBListIt
 		Host:           strings.TrimSpace(req.Host),
 		Account:        strings.TrimSpace(req.Account),
 		Password:       req.Password,
-		RunDirectory:   model.SiteBDefaultRunDirectory,
+		RunDirectory:   runDirectory,
 		CreatedBy:      operator,
 		UpdatedBy:      operator,
 	}
@@ -243,7 +248,7 @@ func toSiteBListItem(item model.SiteB, platformMap map[uint]model.Platform, plat
 		Host:           item.Host,
 		Account:        item.Account,
 		Password:       item.Password,
-		LinkAddress:    buildSiteBLinkAddress(item.IsFtp, item.Host, item.Account),
+		LinkAddress:    buildSiteBLinkAddress(item.Host, item.Account, item.Password),
 		RunDirectory:   item.RunDirectory,
 		Remark:         item.Remark,
 		CreatedBy:      item.CreatedBy,
@@ -253,16 +258,29 @@ func toSiteBListItem(item model.SiteB, platformMap map[uint]model.Platform, plat
 	}
 }
 
-func buildSiteBLinkAddress(isFtp bool, host, account string) string {
-	if !isFtp {
+func buildSiteBLinkAddress(host, account, password string) string {
+	host = strings.TrimSpace(host)
+	account = strings.TrimSpace(account)
+	password = strings.TrimSpace(password)
+	if host == "" && account == "" && password == "" {
+		return "ftp://:@"
+	}
+	return formatSiteBLinkHost(host)
+}
+
+func formatSiteBLinkHost(host string) string {
+	host = strings.TrimSpace(host)
+	if host == "" {
 		return ""
 	}
-	accountText := strings.TrimSpace(account)
-	if accountText == "" {
-		accountText = "-"
+	lower := strings.ToLower(host)
+	if strings.HasPrefix(lower, "https://") {
+		return host
 	}
-	hostText := strings.TrimSpace(host)
-	return "ftp://" + accountText + "@" + hostText
+	if strings.HasPrefix(lower, "http://") {
+		return "https://" + host[len("http://"):]
+	}
+	return "https://" + host
 }
 
 func normalizeSiteBDomain(domain string) (string, error) {

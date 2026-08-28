@@ -7,13 +7,13 @@ const (
 	PlatformStatusEnabled  = 1
 
 	PlatformCodeStripe = "stripe"
-	PlatformCodePP     = "pp"
+	PlatformCodePaypal = "paypal"
 )
 
 // Platform 支付通道平台分类。
 type Platform struct {
 	ID        uint      `gorm:"column:id;primaryKey;autoIncrement;comment:平台ID" json:"id"`
-	Code      string    `gorm:"column:code;type:varchar(32);not null;uniqueIndex;comment:平台编码 stripe pp" json:"code"`
+	Code      string    `gorm:"column:code;type:varchar(32);not null;uniqueIndex;comment:平台编码 stripe paypal" json:"code"`
 	Name      string    `gorm:"column:name;type:varchar(64);not null;comment:平台名称" json:"name"`
 	Sort      int       `gorm:"column:sort;not null;default:0;comment:排序" json:"sort"`
 	Status    int       `gorm:"column:status;not null;default:1;index;comment:状态 1启用 0禁用" json:"status"`

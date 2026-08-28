@@ -297,10 +297,10 @@ func (a *App) ensureCountries() error {
 
 // ensurePlatforms 幂等写入默认通道平台。
 func (a *App) ensurePlatforms() error {
-	if _, err := a.ensurePlatform(model.PlatformCodeStripe, "stripe", 1); err != nil {
+	if _, err := a.ensurePlatform(model.PlatformCodeStripe, "Stripe", 1); err != nil {
 		return err
 	}
-	_, err := a.ensurePlatform(model.PlatformCodePP, "pp", 2)
+	_, err := a.ensurePlatform(model.PlatformCodePaypal, "Paypal", 2)
 	return err
 }
 
