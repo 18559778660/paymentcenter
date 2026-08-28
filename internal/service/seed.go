@@ -270,23 +270,13 @@ func (a *App) ensureCountries() error {
 	return nil
 }
 
-// ensurePlatforms 幂等写入默认通道平台，并回填旧数据的 platform_id。
+// ensurePlatforms 幂等写入默认通道平台。
 func (a *App) ensurePlatforms() error {
-	stripe, err := a.ensurePlatform(model.PlatformCodeStripe, "stripe", 1)
-	if err != nil {
+	if _, err := a.ensurePlatform(model.PlatformCodeStripe, "stripe", 1); err != nil {
 		return err
 	}
-	pp, err := a.ensurePlatform(model.PlatformCodePP, "pp", 2)
-	if err != nil {
-		return err
-	}
-	if err := a.store.MigrateLegacyPlatformData(map[string]uint{
-		model.PlatformCodeStripe: stripe.ID,
-		model.PlatformCodePP:     pp.ID,
-	}); err != nil {
-		return err
-	}
-	return a.store.BackfillDefaultPlatformID(stripe.ID)
+	_, err := a.ensurePlatform(model.PlatformCodePP, "pp", 2)
+	return err
 }
 
 func (a *App) ensurePlatform(code, name string, sort int) (*model.Platform, error) {

@@ -92,8 +92,11 @@ type Store interface {
 	FindPlatformByCode(code string) (*model.Platform, error)
 	GetPlatformByID(id uint) (*model.Platform, error)
 	ListPlatforms() ([]model.Platform, error)
-	MigrateLegacyPlatformData(codes map[string]uint) error
-	BackfillDefaultPlatformID(defaultID uint) error
+	CreateChannelAccount(item *model.ChannelAccount) error
+	SaveChannelAccount(item *model.ChannelAccount) error
+	GetChannelAccountByID(id uint) (*model.ChannelAccount, error)
+	FindChannelAccountByChannelAndSiteB(channelID, siteBID uint) (*model.ChannelAccount, error)
+	ListChannelAccounts(filter store.ChannelAccountListFilter) ([]model.ChannelAccount, error)
 }
 
 // App 业务层入口。各业务方法拆在同包的 auth.go / menu.go / order.go / seed.go。

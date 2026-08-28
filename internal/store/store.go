@@ -37,6 +37,7 @@ func NewMySQLStore(dsn string) (*MySQLStore, error) {
 		&model.Channel{},
 		&model.SiteA{},
 		&model.SiteB{},
+		&model.ChannelAccount{},
 	); err != nil {
 		return nil, err
 	}
@@ -954,38 +955,96 @@ func (s *MySQLStore) ListPlatforms() ([]model.Platform, error) {
 	return list, err
 }
 
-// MigrateLegacyPlatformData 将旧 platform 字符串列回填到 platform_id。
-func (s *MySQLStore) MigrateLegacyPlatformData(codes map[string]uint) error {
-	if s.db.Migrator().HasColumn("channels", "platform") {
-		for code, id := range codes {
-			if err := s.db.Exec(
-				"UPDATE channels SET platform_id = ? WHERE platform = ? AND platform_id = 0",
-				id, code,
-			).Error; err != nil {
-				return err
-			}
-		}
-	}
-	if s.db.Migrator().HasColumn("site_bs", "platform") {
-		for code, id := range codes {
-			if err := s.db.Exec(
-				"UPDATE site_bs SET platform_id = ? WHERE platform = ? AND platform_id = 0",
-				id, code,
-			).Error; err != nil {
-				return err
-			}
-		}
-	}
-	return nil
+// ChannelAccountListFilter 通道账号列表筛选。
+type ChannelAccountListFilter struct {
+	ID           *uint
+	ChannelID    *uint
+	ChannelName  string
+	Alias        string
+	Remark       string
+	CreatedFrom  string
+	CreatedTo    string
+	GroupName    string
+	AssignedUser string
+	ListFilter   string
 }
 
-// BackfillDefaultPlatformID 将 platform_id 为 0 的记录补成默认平台。
-func (s *MySQLStore) BackfillDefaultPlatformID(defaultID uint) error {
-	if defaultID == 0 {
-		return nil
+// CreateChannelAccount 插入通道账号。
+func (s *MySQLStore) CreateChannelAccount(item *model.ChannelAccount) error {
+	return s.db.Create(item).Error
+}
+
+// SaveChannelAccount 更新通道账号。
+func (s *MySQLStore) SaveChannelAccount(item *model.ChannelAccount) error {
+	return s.db.Save(item).Error
+}
+
+// GetChannelAccountByID 按主键查通道账号。
+func (s *MySQLStore) GetChannelAccountByID(id uint) (*model.ChannelAccount, error) {
+	var item model.ChannelAccount
+	tx := s.db.Where("id = ?", id).Limit(1).Find(&item)
+	if tx.Error != nil {
+		return nil, tx.Error
 	}
-	if err := s.db.Model(&model.Channel{}).Where("platform_id = 0").Update("platform_id", defaultID).Error; err != nil {
-		return err
+	if tx.RowsAffected == 0 {
+		return nil, ErrNotFound
 	}
-	return s.db.Model(&model.SiteB{}).Where("platform_id = 0").Update("platform_id", defaultID).Error
+	return &item, nil
+}
+
+// FindChannelAccountByChannelAndSiteB 按通道和 B 站查询。
+func (s *MySQLStore) FindChannelAccountByChannelAndSiteB(channelID, siteBID uint) (*model.ChannelAccount, error) {
+	var item model.ChannelAccount
+	tx := s.db.Where("channel_id = ? AND site_b_id = ?", channelID, siteBID).Limit(1).Find(&item)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return nil, ErrNotFound
+	}
+	return &item, nil
+}
+
+// ListChannelAccounts 按条件查询通道账号，按 id 倒序。
+func (s *MySQLStore) ListChannelAccounts(filter ChannelAccountListFilter) ([]model.ChannelAccount, error) {
+	q := s.db.Model(&model.ChannelAccount{})
+	if filter.ID != nil {
+		q = q.Where("channel_accounts.id = ?", *filter.ID)
+	}
+	if filter.Alias != "" {
+		q = q.Where("channel_accounts.alias LIKE ?", "%"+filter.Alias+"%")
+	}
+	if filter.Remark != "" {
+		q = q.Where("channel_accounts.remark LIKE ?", "%"+filter.Remark+"%")
+	}
+	if filter.ChannelID != nil {
+		q = q.Where("channel_accounts.channel_id = ?", *filter.ChannelID)
+	}
+	if filter.CreatedFrom != "" {
+		q = q.Where("DATE(channel_accounts.created_at) >= ?", filter.CreatedFrom)
+	}
+	if filter.CreatedTo != "" {
+		q = q.Where("DATE(channel_accounts.created_at) <= ?", filter.CreatedTo)
+	}
+	if filter.GroupName != "" {
+		q = q.Where("channel_accounts.group_name = ?", filter.GroupName)
+	}
+	if filter.AssignedUser != "" {
+		q = q.Where("channel_accounts.assigned_user = ?", filter.AssignedUser)
+	}
+	switch filter.ListFilter {
+	case "unpaid":
+		q = q.Where("channel_accounts.unpaid_closed = ?", true)
+	case "restricted":
+		q = q.Where("channel_accounts.restricted_closed = ?", true)
+	case "closed8":
+		q = q.Where("channel_accounts.cannot_open_at8 = ?", true)
+	}
+	if filter.ChannelName != "" {
+		q = q.Joins("LEFT JOIN channels ON channels.id = channel_accounts.channel_id").
+			Where("channels.name LIKE ?", "%"+filter.ChannelName+"%")
+	}
+	var list []model.ChannelAccount
+	err := q.Order("channel_accounts.id DESC").Find(&list).Error
+	return list, err
 }

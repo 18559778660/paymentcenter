@@ -33,6 +33,7 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 	channelController := controller.NewChannelController(app)
 	siteAController := controller.NewSiteAController(app)
 	siteBController := controller.NewSiteBController(app)
+	channelAccountController := controller.NewChannelAccountController(app)
 	gatewayController := controller.NewGatewayController(app)
 	orderController := controller.NewOrderController(app)
 
@@ -107,6 +108,13 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 			authed.PUT("/channels/:id/status", channelController.SetStatus)
 			authed.POST("/channels/:id/package", channelController.UploadPackage)
 			authed.GET("/channels/:id/package", channelController.DownloadPackage)
+
+			// 通道账号
+			authed.GET("/channel-accounts", channelAccountController.List)
+			authed.POST("/channel-accounts", channelAccountController.Create)
+			authed.PUT("/channel-accounts/:id", channelAccountController.Update)
+			authed.PUT("/channel-accounts/:id/limits", channelAccountController.UpdateLimits)
+			authed.PUT("/channel-accounts/:id/status", channelAccountController.SetStatus)
 
 			// A 站管理
 			authed.GET("/site-as", siteAController.List)
