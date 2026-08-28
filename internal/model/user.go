@@ -6,8 +6,9 @@ const (
 	UserStatusDisabled = 0 // 禁用
 	UserStatusEnabled  = 1 // 启用
 
-	UserTypeAdmin    = "admin"    // 后台管理员
-	UserTypeMerchant = "merchant" // 商户账号，可登录同一后台
+	UserTypeAdmin        = "admin"        // 后台管理员
+	UserTypeMerchant     = "merchant"     // 商户账号，可登录同一后台
+	UserTypeDistribution = "distribution" // 分配子账号，可登录并查看通道账号
 )
 
 // User 模型层：后台用户，对应 users 表。
@@ -18,7 +19,7 @@ type User struct {
 	RealName     string     `gorm:"column:real_name;type:varchar(64);not null;default:''" json:"real_name"`                 // 显示名
 	Avatar       string     `gorm:"column:avatar;type:varchar(255);not null;default:''" json:"avatar"`                      // 头像地址
 	HomePath     string     `gorm:"column:home_path;type:varchar(128);not null;default:'/dashboard/analytics'" json:"home_path"` // 登录后跳转页
-	Type         string     `gorm:"column:type;type:varchar(32);not null;default:'admin';index" json:"type"`                // admin|merchant
+	Type         string     `gorm:"column:type;type:varchar(32);not null;default:'admin';index" json:"type"`                // admin|merchant|distribution
 	Status       int        `gorm:"column:status;not null;default:1;index" json:"status"`                                    // 1启用 0禁用
 	LastLoginAt  *time.Time `gorm:"column:last_login_at" json:"last_login_at,omitempty"`                                     // 最后登录时间
 	CreatedAt    time.Time  `gorm:"column:created_at" json:"created_at"`                                                     // 创建时间

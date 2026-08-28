@@ -6,6 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"paymentcenter/internal/middleware"
+	"paymentcenter/internal/model"
 	"paymentcenter/internal/service"
 	"paymentcenter/internal/util/response"
 )
@@ -23,13 +25,26 @@ func NewChannelAccountController(app *service.App) *ChannelAccountController {
 // List 通道账号列表。
 func (m *ChannelAccountController) List(c *gin.Context) {
 	q := service.ChannelAccountListQuery{
-		ChannelName:  c.Query("channelName"),
-		Alias:        c.Query("alias"),
-		Remark:       c.Query("remark"),
-		CreatedFrom:  c.Query("createdFrom"),
-		CreatedTo:    c.Query("createdTo"),
-		AssignedUser: c.Query("assignedUser"),
-		ListFilter:   c.Query("listFilter"),
+		ChannelName: c.Query("channelName"),
+		Alias:       c.Query("alias"),
+		Remark:      c.Query("remark"),
+		CreatedFrom: c.Query("createdFrom"),
+		CreatedTo:   c.Query("createdTo"),
+		ListFilter:  c.Query("listFilter"),
+	}
+	if v := c.Query("assignedUserId"); v != "" {
+		id, err := strconv.ParseUint(v, 10, 64)
+		if err == nil {
+			uid := uint(id)
+			q.AssignedUserID = &uid
+		}
+	}
+	if user, ok := middleware.CurrentUser(c); ok {
+		fullUser, err := m.app.GetUserForScope(user.ID)
+		if err == nil && fullUser.Type == model.UserTypeDistribution {
+			q.ScopeUserID = fullUser.ID
+			q.ScopeUserType = fullUser.Type
+		}
 	}
 	if v := c.Query("groupId"); v != "" {
 		id, err := strconv.ParseUint(v, 10, 64)

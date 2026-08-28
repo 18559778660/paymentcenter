@@ -35,6 +35,7 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 	siteBController := controller.NewSiteBController(app)
 	channelAccountController := controller.NewChannelAccountController(app)
 	channelGroupController := controller.NewChannelGroupController(app)
+	assignUserController := controller.NewAssignUserController(app)
 	gatewayController := controller.NewGatewayController(app)
 	orderController := controller.NewOrderController(app)
 
@@ -123,6 +124,12 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 			authed.PUT("/channel-groups/:id", channelGroupController.Update)
 			authed.GET("/channel-groups/:id/accounts", channelGroupController.ListAccounts)
 			authed.PUT("/channel-groups/:id/accounts/:accountId/membership", channelGroupController.SetAccountMembership)
+
+			// 账号分配
+			authed.GET("/assign-users", assignUserController.List)
+			authed.POST("/assign-users", assignUserController.Create)
+			authed.GET("/assign-users/:id/accounts", assignUserController.ListAccounts)
+			authed.PUT("/assign-users/:id/accounts/:accountId/assignment", assignUserController.SetAccountAssignment)
 
 			// A 站管理
 			authed.GET("/site-as", siteAController.List)

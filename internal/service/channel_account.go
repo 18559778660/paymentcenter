@@ -79,9 +79,11 @@ type ChannelAccountListQuery struct {
 	Remark       string
 	CreatedFrom  string
 	CreatedTo    string
-	GroupID      *uint
-	AssignedUser string
-	ListFilter   string
+	GroupID          *uint
+	AssignedUserID   *uint
+	ListFilter       string
+	ScopeUserID      uint
+	ScopeUserType    string
 }
 
 // CreateChannelAccountRequest 新增通道账号。
@@ -143,18 +145,22 @@ type UpdateChannelAccountLimitsRequest struct {
 
 // ListChannelAccounts 通道账号列表。
 func (a *App) ListChannelAccounts(q ChannelAccountListQuery) ([]ChannelAccountListItem, error) {
-	list, err := a.store.ListChannelAccounts(store.ChannelAccountListFilter{
-		ID:           q.ID,
-		ChannelID:    q.ChannelID,
-		ChannelName:  q.ChannelName,
-		Alias:        q.Alias,
-		Remark:       q.Remark,
-		CreatedFrom:  q.CreatedFrom,
-		CreatedTo:    q.CreatedTo,
-		GroupID:      q.GroupID,
-		AssignedUser: q.AssignedUser,
-		ListFilter:   q.ListFilter,
-	})
+	filter := store.ChannelAccountListFilter{
+		ID:             q.ID,
+		ChannelID:      q.ChannelID,
+		ChannelName:    q.ChannelName,
+		Alias:          q.Alias,
+		Remark:         q.Remark,
+		CreatedFrom:    q.CreatedFrom,
+		CreatedTo:      q.CreatedTo,
+		GroupID:        q.GroupID,
+		AssignedUserID: q.AssignedUserID,
+		ListFilter:     q.ListFilter,
+	}
+	if q.ScopeUserType == model.UserTypeDistribution && q.ScopeUserID > 0 {
+		filter.AssignedUserID = &q.ScopeUserID
+	}
+	list, err := a.store.ListChannelAccounts(filter)
 	if err != nil {
 		return nil, err
 	}
@@ -170,13 +176,29 @@ func (a *App) ListChannelAccounts(q ChannelAccountListQuery) ([]ChannelAccountLi
 	if err != nil {
 		return nil, err
 	}
+	assignedUserIDs := make([]uint, 0)
+	seenAssigned := map[uint]struct{}{}
+	for _, item := range list {
+		if item.AssignedUserID == 0 {
+			continue
+		}
+		if _, ok := seenAssigned[item.AssignedUserID]; ok {
+			continue
+		}
+		seenAssigned[item.AssignedUserID] = struct{}{}
+		assignedUserIDs = append(assignedUserIDs, item.AssignedUserID)
+	}
+	assignedUserMap, err := a.loadAssignedUserNameMap(assignedUserIDs)
+	if err != nil {
+		return nil, err
+	}
 	out := make([]ChannelAccountListItem, 0, len(list))
 	for _, item := range list {
 		groupNames := groupMap[item.ID]
 		if groupNames == nil {
 			groupNames = []string{}
 		}
-		out = append(out, toChannelAccountListItem(item, channelMap, siteBMap, groupNames))
+		out = append(out, toChannelAccountListItem(item, channelMap, siteBMap, groupNames, assignedUserMap))
 	}
 	return out, nil
 }
@@ -397,7 +419,11 @@ func (a *App) getChannelAccountItem(id uint) (*ChannelAccountListItem, error) {
 	if groupNames == nil {
 		groupNames = []string{}
 	}
-	out := toChannelAccountListItem(*item, channelMap, siteBMap, groupNames)
+	assignedUserMap, err := a.loadAssignedUserNameMap([]uint{item.AssignedUserID})
+	if err != nil {
+		return nil, err
+	}
+	out := toChannelAccountListItem(*item, channelMap, siteBMap, groupNames, assignedUserMap)
 	return &out, nil
 }
 
@@ -464,9 +490,10 @@ func (a *App) loadChannelAccountGroupNamesMap(accounts []model.ChannelAccount) (
 	return result, nil
 }
 
-func toChannelAccountListItem(item model.ChannelAccount, channelMap map[uint]string, siteBMap map[uint]string, groupNames []string) ChannelAccountListItem {
+func toChannelAccountListItem(item model.ChannelAccount, channelMap map[uint]string, siteBMap map[uint]string, groupNames []string, assignedUserMap map[uint]string) ChannelAccountListItem {
 	channelName := channelMap[item.ChannelID]
 	siteBDomain := siteBMap[item.SiteBID]
+	assignedUser := assignedUserMap[item.AssignedUserID]
 	return ChannelAccountListItem{
 		ID:                item.ID,
 		ChannelID:         item.ChannelID,
@@ -478,7 +505,7 @@ func toChannelAccountListItem(item model.ChannelAccount, channelMap map[uint]str
 		Remark:            item.Remark,
 		PaymentMethod:     item.PaymentMethod,
 		GroupNames:        groupNames,
-		AssignedUser:      item.AssignedUser,
+		AssignedUser:      assignedUser,
 		TotalReceived:     item.TotalReceived,
 		Status:            item.Status == model.ChannelAccountStatusEnabled,
 		ResetTimezone:     item.ResetTimezone,

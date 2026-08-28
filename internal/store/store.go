@@ -2,6 +2,7 @@ package store
 
 import (
 	"fmt"
+	"strings"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -967,8 +968,55 @@ type ChannelAccountListFilter struct {
 	CreatedFrom  string
 	CreatedTo    string
 	GroupID      *uint
-	AssignedUser string
-	ListFilter   string
+	AssignedUserID *uint
+	ListFilter     string
+}
+
+// AssignUserListFilter 分配子账号列表筛选。
+type AssignUserListFilter struct {
+	Field   string
+	Keyword string
+}
+
+// ListUsersByType 按用户类型查询用户列表。
+func (s *MySQLStore) ListUsersByType(userType string, filter AssignUserListFilter) ([]model.User, error) {
+	q := s.db.Model(&model.User{}).Where("type = ?", userType)
+	keyword := strings.TrimSpace(filter.Keyword)
+	if keyword != "" {
+		if filter.Field == "nickname" {
+			q = q.Where("real_name LIKE ?", "%"+keyword+"%")
+		} else {
+			q = q.Where("username LIKE ?", "%"+keyword+"%")
+		}
+	}
+	var list []model.User
+	err := q.Order("id DESC").Find(&list).Error
+	return list, err
+}
+
+// CountChannelAccountsByAssignedUserIDs 批量统计各子账号已分配通道账号数。
+func (s *MySQLStore) CountChannelAccountsByAssignedUserIDs(userIDs []uint) (map[uint]int64, error) {
+	result := make(map[uint]int64, len(userIDs))
+	if len(userIDs) == 0 {
+		return result, nil
+	}
+	type row struct {
+		AssignedUserID uint
+		Count          int64
+	}
+	var rows []row
+	err := s.db.Model(&model.ChannelAccount{}).
+		Select("assigned_user_id, COUNT(*) AS count").
+		Where("assigned_user_id IN ?", userIDs).
+		Group("assigned_user_id").
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	for _, item := range rows {
+		result[item.AssignedUserID] = item.Count
+	}
+	return result, nil
 }
 
 // CreateChannelAccount 插入通道账号。
@@ -1035,8 +1083,8 @@ func (s *MySQLStore) ListChannelAccounts(filter ChannelAccountListFilter) ([]mod
 				AND cgm.group_id = ?
 		`, *filter.GroupID)
 	}
-	if filter.AssignedUser != "" {
-		q = q.Where("channel_accounts.assigned_user = ?", filter.AssignedUser)
+	if filter.AssignedUserID != nil {
+		q = q.Where("channel_accounts.assigned_user_id = ?", *filter.AssignedUserID)
 	}
 	switch filter.ListFilter {
 	case "unpaid":

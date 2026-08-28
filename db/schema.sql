@@ -234,7 +234,7 @@ CREATE TABLE IF NOT EXISTS channel_accounts (
   private_key TEXT NOT NULL COMMENT '私钥',
   environment VARCHAR(32) NOT NULL DEFAULT 'live' COMMENT '环境',
   payment_method VARCHAR(32) NOT NULL DEFAULT 'card' COMMENT '支付方式',
-  assigned_user VARCHAR(64) NOT NULL DEFAULT '' COMMENT '分配用户',
+  assigned_user_id BIGINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '分配子账号用户ID，0表示未分配',
   total_received DECIMAL(18,2) NOT NULL DEFAULT 0 COMMENT '总收款USD',
   unpaid_closed TINYINT(1) NOT NULL DEFAULT 0 COMMENT '跳转未付关闭',
   restricted_closed TINYINT(1) NOT NULL DEFAULT 0 COMMENT '账号受限关闭',
@@ -248,7 +248,8 @@ CREATE TABLE IF NOT EXISTS channel_accounts (
   UNIQUE KEY idx_channel_accounts_channel_site_b (channel_id, site_b_id),
   KEY idx_channel_accounts_channel_id (channel_id),
   KEY idx_channel_accounts_site_b_id (site_b_id),
-  KEY idx_channel_accounts_status (status)
+  KEY idx_channel_accounts_status (status),
+  KEY idx_channel_accounts_assigned_user_id (assigned_user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='通道账号表';
 
 CREATE TABLE IF NOT EXISTS channel_group_members (

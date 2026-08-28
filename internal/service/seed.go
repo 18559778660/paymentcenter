@@ -51,6 +51,10 @@ func (a *App) SeedRBAC(adminUsername, adminPassword string) error {
 	if err != nil {
 		return err
 	}
+	distributionRole, err := a.ensureRole("distribution", "分配子账号", "可登录并查看通道账号")
+	if err != nil {
+		return err
+	}
 
 	seeds, err := loadMenuSeeds()
 	if err != nil {
@@ -69,13 +73,16 @@ func (a *App) SeedRBAC(adminUsername, adminPassword string) error {
 		}
 	}
 	// 商户角色先开放首页，后续可按业务再扩
-	if dashboard, err := a.store.FindMenuByName("Dashboard"); err == nil {
-		if err := a.store.EnsureRoleMenu(merchantRole.ID, dashboard.ID); err != nil {
+	if analytics, err := a.store.FindMenuByName("Analytics"); err == nil {
+		if err := a.ensureRoleMenuWithAncestors(merchantRole.ID, analytics.ID); err != nil {
+			return err
+		}
+		if err := a.ensureRoleMenuWithAncestors(distributionRole.ID, analytics.ID); err != nil {
 			return err
 		}
 	}
-	if analytics, err := a.store.FindMenuByName("Analytics"); err == nil {
-		if err := a.store.EnsureRoleMenu(merchantRole.ID, analytics.ID); err != nil {
+	if channelAccount, err := a.store.FindMenuByName("ChannelAccount"); err == nil {
+		if err := a.ensureRoleMenuWithAncestors(distributionRole.ID, channelAccount.ID); err != nil {
 			return err
 		}
 	}
@@ -118,6 +125,24 @@ func (a *App) ensureRole(code, name, remark string) (*model.Role, error) {
 		return nil, err
 	}
 	return role, nil
+}
+
+// ensureRoleMenuWithAncestors 给角色绑定菜单，并递归绑定所有父级目录（否则子菜单无法出现在侧边栏）。
+func (a *App) ensureRoleMenuWithAncestors(roleID, menuID uint) error {
+	menu, err := a.store.GetMenuByID(menuID)
+	if err != nil {
+		if isNotFound(err) {
+			return nil
+		}
+		return err
+	}
+	if err := a.store.EnsureRoleMenu(roleID, menu.ID); err != nil {
+		return err
+	}
+	if menu.ParentID > 0 {
+		return a.ensureRoleMenuWithAncestors(roleID, menu.ParentID)
+	}
+	return nil
 }
 
 // ensureMenus 按树写入菜单，已存在的 Name 不覆盖，返回全部菜单 ID。

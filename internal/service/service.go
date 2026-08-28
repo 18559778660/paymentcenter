@@ -108,6 +108,8 @@ type Store interface {
 	RemoveChannelGroupMember(groupID, accountID uint) error
 	ListChannelGroupMemberAccountIDs(groupID uint) ([]uint, error)
 	ListChannelGroupMembersByAccountIDs(accountIDs []uint) ([]model.ChannelGroupMember, error)
+	ListUsersByType(userType string, filter store.AssignUserListFilter) ([]model.User, error)
+	CountChannelAccountsByAssignedUserIDs(userIDs []uint) (map[uint]int64, error)
 }
 
 // App 业务层入口。各业务方法拆在同包的 auth.go / menu.go / order.go / seed.go。

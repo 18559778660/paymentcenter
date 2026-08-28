@@ -44,7 +44,8 @@ type ChannelAccount struct {
 	PrivateKey        string     `gorm:"column:private_key;type:text;not null;comment:私钥" json:"private_key"`
 	Environment       string     `gorm:"column:environment;type:varchar(32);not null;default:'live';comment:环境" json:"environment"`
 	PaymentMethod     string     `gorm:"column:payment_method;type:varchar(32);not null;default:'card';comment:支付方式" json:"payment_method"`
-	AssignedUser      string     `gorm:"column:assigned_user;type:varchar(64);not null;default:'';comment:分配用户" json:"assigned_user"`
+	AssignedUserID    uint       `gorm:"column:assigned_user_id;not null;default:0;index;comment:分配子账号用户ID，0表示未分配" json:"assigned_user_id"`
+	AssignedUser      string     `gorm:"-" json:"assigned_user"`
 	TotalReceived     float64    `gorm:"column:total_received;type:decimal(18,2);not null;default:0;comment:总收款USD" json:"total_received"`
 	UnpaidClosed      bool       `gorm:"column:unpaid_closed;not null;default:0;comment:跳转未付关闭" json:"unpaid_closed"`
 	RestrictedClosed  bool       `gorm:"column:restricted_closed;not null;default:0;comment:账号受限关闭" json:"restricted_closed"`
