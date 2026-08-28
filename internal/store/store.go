@@ -38,6 +38,7 @@ func NewMySQLStore(dsn string) (*MySQLStore, error) {
 		&model.SiteA{},
 		&model.SiteB{},
 		&model.ChannelAccount{},
+		&model.ChannelGroup{},
 	); err != nil {
 		return nil, err
 	}
@@ -1047,4 +1048,82 @@ func (s *MySQLStore) ListChannelAccounts(filter ChannelAccountListFilter) ([]mod
 	var list []model.ChannelAccount
 	err := q.Order("channel_accounts.id DESC").Find(&list).Error
 	return list, err
+}
+
+// ChannelGroupListFilter 通道分组列表筛选。
+type ChannelGroupListFilter struct {
+	ID   *uint
+	Code string
+}
+
+// CreateChannelGroup 插入通道分组。
+func (s *MySQLStore) CreateChannelGroup(item *model.ChannelGroup) error {
+	return s.db.Create(item).Error
+}
+
+// SaveChannelGroup 更新通道分组。
+func (s *MySQLStore) SaveChannelGroup(item *model.ChannelGroup) error {
+	return s.db.Save(item).Error
+}
+
+// GetChannelGroupByID 按主键查通道分组。
+func (s *MySQLStore) GetChannelGroupByID(id uint) (*model.ChannelGroup, error) {
+	var item model.ChannelGroup
+	tx := s.db.Where("id = ?", id).Limit(1).Find(&item)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return nil, ErrNotFound
+	}
+	return &item, nil
+}
+
+// FindChannelGroupByCode 按分组 CODE 查询。
+func (s *MySQLStore) FindChannelGroupByCode(code string) (*model.ChannelGroup, error) {
+	var item model.ChannelGroup
+	tx := s.db.Where("code = ?", code).Limit(1).Find(&item)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return nil, ErrNotFound
+	}
+	return &item, nil
+}
+
+// FindChannelGroupByName 按分组名查询。
+func (s *MySQLStore) FindChannelGroupByName(name string) (*model.ChannelGroup, error) {
+	var item model.ChannelGroup
+	tx := s.db.Where("name = ?", name).Limit(1).Find(&item)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return nil, ErrNotFound
+	}
+	return &item, nil
+}
+
+// ListChannelGroups 按条件查询通道分组，按 id 倒序。
+func (s *MySQLStore) ListChannelGroups(filter ChannelGroupListFilter) ([]model.ChannelGroup, error) {
+	q := s.db.Model(&model.ChannelGroup{})
+	if filter.ID != nil {
+		q = q.Where("id = ?", *filter.ID)
+	}
+	if filter.Code != "" {
+		q = q.Where("code LIKE ?", "%"+filter.Code+"%")
+	}
+	var list []model.ChannelGroup
+	err := q.Order("id DESC").Find(&list).Error
+	return list, err
+}
+
+// CountEnabledChannelAccountsByGroupName 统计分组下启用的通道账号数。
+func (s *MySQLStore) CountEnabledChannelAccountsByGroupName(groupName string) (int64, error) {
+	var count int64
+	err := s.db.Model(&model.ChannelAccount{}).
+		Where("group_name = ? AND status = ?", groupName, model.ChannelAccountStatusEnabled).
+		Count(&count).Error
+	return count, err
 }

@@ -97,6 +97,13 @@ type Store interface {
 	GetChannelAccountByID(id uint) (*model.ChannelAccount, error)
 	FindChannelAccountByChannelAndSiteB(channelID, siteBID uint) (*model.ChannelAccount, error)
 	ListChannelAccounts(filter store.ChannelAccountListFilter) ([]model.ChannelAccount, error)
+	CreateChannelGroup(item *model.ChannelGroup) error
+	SaveChannelGroup(item *model.ChannelGroup) error
+	GetChannelGroupByID(id uint) (*model.ChannelGroup, error)
+	FindChannelGroupByCode(code string) (*model.ChannelGroup, error)
+	FindChannelGroupByName(name string) (*model.ChannelGroup, error)
+	ListChannelGroups(filter store.ChannelGroupListFilter) ([]model.ChannelGroup, error)
+	CountEnabledChannelAccountsByGroupName(groupName string) (int64, error)
 }
 
 // App 业务层入口。各业务方法拆在同包的 auth.go / menu.go / order.go / seed.go。
