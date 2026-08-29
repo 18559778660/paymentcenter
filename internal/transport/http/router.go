@@ -36,6 +36,7 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 	channelAccountController := controller.NewChannelAccountController(app)
 	channelGroupController := controller.NewChannelGroupController(app)
 	assignUserController := controller.NewAssignUserController(app)
+	stripeWordBankController := controller.NewStripeWordBankController(app)
 	gatewayController := controller.NewGatewayController(app)
 	orderController := controller.NewOrderController(app)
 
@@ -141,6 +142,12 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 			authed.POST("/site-bs", siteBController.Create)
 			authed.PUT("/site-bs/:id", siteBController.Update)
 			authed.PUT("/site-bs/:id/status", siteBController.SetStatus)
+
+			// Stripe 单词库
+			authed.GET("/stripe-word-banks", stripeWordBankController.List)
+			authed.POST("/stripe-word-banks", stripeWordBankController.Create)
+			authed.PUT("/stripe-word-banks/:id", stripeWordBankController.Update)
+			authed.DELETE("/stripe-word-banks/:id", stripeWordBankController.Delete)
 
 			// 健康检查
 			authed.GET("/health", healthController.Health)

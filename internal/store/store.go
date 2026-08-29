@@ -41,6 +41,7 @@ func NewMySQLStore(dsn string) (*MySQLStore, error) {
 		&model.ChannelAccount{},
 		&model.ChannelGroup{},
 		&model.ChannelGroupMember{},
+		&model.StripeWordBank{},
 	); err != nil {
 		return nil, err
 	}
@@ -1222,4 +1223,61 @@ func (s *MySQLStore) ListChannelGroupMembersByAccountIDs(accountIDs []uint) ([]m
 	var list []model.ChannelGroupMember
 	err := s.db.Where("channel_account_id IN ?", accountIDs).Find(&list).Error
 	return list, err
+}
+
+// StripeWordBankListFilter Stripe 单词库列表筛选。
+type StripeWordBankListFilter struct {
+	ConfigItem string
+}
+
+// CreateStripeWordBank 插入 Stripe 单词。
+func (s *MySQLStore) CreateStripeWordBank(item *model.StripeWordBank) error {
+	return s.db.Create(item).Error
+}
+
+// SaveStripeWordBank 更新 Stripe 单词。
+func (s *MySQLStore) SaveStripeWordBank(item *model.StripeWordBank) error {
+	return s.db.Save(item).Error
+}
+
+// GetStripeWordBankByID 按主键查 Stripe 单词。
+func (s *MySQLStore) GetStripeWordBankByID(id uint) (*model.StripeWordBank, error) {
+	var item model.StripeWordBank
+	tx := s.db.Where("id = ?", id).Limit(1).Find(&item)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return nil, ErrNotFound
+	}
+	return &item, nil
+}
+
+// FindStripeWordBankByName 按路径名查询。
+func (s *MySQLStore) FindStripeWordBankByName(name string) (*model.StripeWordBank, error) {
+	var item model.StripeWordBank
+	tx := s.db.Where("name = ?", name).Limit(1).Find(&item)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return nil, ErrNotFound
+	}
+	return &item, nil
+}
+
+// ListStripeWordBanks 查询 Stripe 单词库，按 id 倒序。
+func (s *MySQLStore) ListStripeWordBanks(filter StripeWordBankListFilter) ([]model.StripeWordBank, error) {
+	q := s.db.Model(&model.StripeWordBank{})
+	if filter.ConfigItem != "" {
+		q = q.Where("config_item = ?", filter.ConfigItem)
+	}
+	var list []model.StripeWordBank
+	err := q.Order("id DESC").Find(&list).Error
+	return list, err
+}
+
+// DeleteStripeWordBank 删除 Stripe 单词。
+func (s *MySQLStore) DeleteStripeWordBank(id uint) error {
+	return s.db.Delete(&model.StripeWordBank{}, id).Error
 }

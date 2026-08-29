@@ -1,0 +1,10 @@
+[
+  "transaction",
+  "settlement",
+  "sales_order",
+  "barter",
+  "swap",
+  "spot_trade",
+  "store",
+  "deal"
+]

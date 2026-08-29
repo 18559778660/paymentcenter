@@ -295,3 +295,17 @@ CREATE TABLE IF NOT EXISTS channel_groups (
   UNIQUE KEY idx_channel_groups_name (name),
   KEY idx_channel_groups_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='通道分组表';
+
+CREATE TABLE IF NOT EXISTS stripe_word_banks (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'ID',
+  name VARCHAR(128) NOT NULL COMMENT '路径名称',
+  usage_count INT NOT NULL DEFAULT 0 COMMENT '使用次数',
+  config_item VARCHAR(32) NOT NULL COMMENT '配置项 webhook链接 回调路径 目录',
+  created_by VARCHAR(64) NOT NULL DEFAULT '' COMMENT '创建人',
+  updated_by VARCHAR(64) NOT NULL DEFAULT '' COMMENT '更新人',
+  created_at DATETIME NULL COMMENT '创建时间',
+  updated_at DATETIME NULL COMMENT '更新时间',
+  PRIMARY KEY (id),
+  UNIQUE KEY idx_stripe_word_banks_name (name),
+  KEY idx_stripe_word_banks_config_item (config_item)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Stripe单词库';

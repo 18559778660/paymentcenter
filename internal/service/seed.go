@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"paymentcenter/internal/model"
+	"paymentcenter/internal/store"
 )
 
 // menusJSON 内置菜单种子，改菜单编辑 menus.json 即可。
@@ -22,6 +23,9 @@ import (
 //
 //go:embed menus.json
 var menusJSON []byte
+
+//go:embed stripe_word_bank_directories.json
+var stripeWordBankDirectoriesJSON []byte
 
 // menuSeed 初始化菜单用的内存结构，启动时写入 menus 表。
 type menuSeed struct {
@@ -97,6 +101,9 @@ func (a *App) SeedRBAC(adminUsername, adminPassword string) error {
 		return err
 	}
 	if err := a.ensurePlatforms(); err != nil {
+		return err
+	}
+	if err := a.ensureStripeWordBankDirectories(); err != nil {
 		return err
 	}
 
@@ -322,6 +329,29 @@ func (a *App) ensurePlatform(code, name string, sort int) (*model.Platform, erro
 		return nil, err
 	}
 	return platform, nil
+}
+
+// ensureStripeWordBankDirectories 空表时写入默认目录。
+func (a *App) ensureStripeWordBankDirectories() error {
+	list, err := a.store.ListStripeWordBanks(store.StripeWordBankListFilter{})
+	if err != nil || len(list) > 0 {
+		return err
+	}
+	var names []string
+	if err := json.Unmarshal(stripeWordBankDirectoriesJSON, &names); err != nil {
+		return fmt.Errorf("parse stripe_word_bank_directories.json: %w", err)
+	}
+	for _, name := range names {
+		if err := a.store.CreateStripeWordBank(&model.StripeWordBank{
+			Name:       name,
+			ConfigItem: model.StripeWordBankConfigDirectory,
+			CreatedBy:  "system",
+			UpdatedBy:  "system",
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // loadMenuSeeds 读取 menus.json。只给库里还不存在的菜单做插入。

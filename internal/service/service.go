@@ -110,6 +110,12 @@ type Store interface {
 	ListChannelGroupMembersByAccountIDs(accountIDs []uint) ([]model.ChannelGroupMember, error)
 	ListUsersByType(userType string, filter store.AssignUserListFilter) ([]model.User, error)
 	CountChannelAccountsByAssignedUserIDs(userIDs []uint) (map[uint]int64, error)
+	CreateStripeWordBank(item *model.StripeWordBank) error
+	SaveStripeWordBank(item *model.StripeWordBank) error
+	GetStripeWordBankByID(id uint) (*model.StripeWordBank, error)
+	FindStripeWordBankByName(name string) (*model.StripeWordBank, error)
+	ListStripeWordBanks(filter store.StripeWordBankListFilter) ([]model.StripeWordBank, error)
+	DeleteStripeWordBank(id uint) error
 }
 
 // App 业务层入口。各业务方法拆在同包的 auth.go / menu.go / order.go / seed.go。
