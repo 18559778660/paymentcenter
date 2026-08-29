@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"math/rand"
 	"strings"
 
 	"paymentcenter/internal/model"
@@ -73,6 +74,18 @@ type SetSiteBStatusRequest struct {
 	Status bool `json:"status"`
 }
 
+// SiteBGatewayItem B 站网关列表行。
+type SiteBGatewayItem struct {
+	ID             uint   `json:"id"`
+	ChannelName    string `json:"channelName"`
+	Status         bool   `json:"status"`
+	AccountBound   bool   `json:"accountBound"`
+	AccountEnabled bool   `json:"accountEnabled"`
+	PaymentMode    string `json:"paymentMode"`
+	Remark         string `json:"remark"`
+	GatewayURL     string `json:"gatewayUrl"`
+}
+
 // ListSiteBs 查询 B 站列表。
 func (a *App) ListSiteBs(q SiteBListQuery) ([]SiteBListItem, error) {
 	list, err := a.store.ListSiteBs(store.SiteBListFilter{
@@ -128,8 +141,15 @@ func (a *App) CreateSiteB(req CreateSiteBRequest, operator string) (*SiteBListIt
 		isFtp = *req.IsFtp
 	}
 	runDirectory := strings.TrimSpace(req.RunDirectory)
-	if runDirectory == "" && platform.Code != model.PlatformCodeStripe {
-		runDirectory = model.SiteBDefaultRunDirectory
+	if runDirectory == "" {
+		if platform.Code == model.PlatformCodeStripe {
+			runDirectory, err = a.randomStripeWordBankDirectory()
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			runDirectory = model.SiteBDefaultRunDirectory
+		}
 	}
 	item := &model.SiteB{
 		Domain:         domain,
@@ -149,6 +169,50 @@ func (a *App) CreateSiteB(req CreateSiteBRequest, operator string) (*SiteBListIt
 		return nil, err
 	}
 	return a.getSiteBItem(item.ID)
+}
+
+// ListSiteBGateways 查询 B 站网关列表：同平台全部通道 + 是否绑定该 B 站账号。
+func (a *App) ListSiteBGateways(siteBID uint) ([]SiteBGatewayItem, error) {
+	siteB, err := a.store.GetSiteBByID(siteBID)
+	if err != nil {
+		if isNotFound(err) {
+			return nil, ErrSiteBNotFound
+		}
+		return nil, err
+	}
+	channels, err := a.store.ListChannels(store.ChannelListFilter{
+		PlatformID: &siteB.PlatformID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	accounts, err := a.store.ListChannelAccounts(store.ChannelAccountListFilter{
+		SiteBID: &siteBID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	accountMap := make(map[uint]model.ChannelAccount, len(accounts))
+	for _, account := range accounts {
+		accountMap[account.ChannelID] = account
+	}
+	out := make([]SiteBGatewayItem, 0, len(channels))
+	for _, channel := range channels {
+		item := SiteBGatewayItem{
+			ID:          channel.ID,
+			ChannelName: channel.Name,
+			Status:      channel.Status == model.ChannelStatusEnabled,
+			PaymentMode: channel.PaymentMode,
+			Remark:      channel.Remark,
+			GatewayURL:  a.BuildGatewayURL(channel.Name),
+		}
+		if account, ok := accountMap[channel.ID]; ok {
+			item.AccountBound = true
+			item.AccountEnabled = account.Status == model.ChannelAccountStatusEnabled
+		}
+		out = append(out, item)
+	}
+	return out, nil
 }
 
 // UpdateSiteB 编辑 B 站 FTP 信息。
@@ -306,4 +370,17 @@ func normalizeSiteBFramework(framework string) (string, error) {
 	default:
 		return "", ErrSiteBFrameworkInvalid
 	}
+}
+
+func (a *App) randomStripeWordBankDirectory() (string, error) {
+	list, err := a.store.ListStripeWordBanks(store.StripeWordBankListFilter{
+		ConfigItem: model.StripeWordBankConfigDirectory,
+	})
+	if err != nil {
+		return "", err
+	}
+	if len(list) == 0 {
+		return model.SiteBDefaultRunDirectory, nil
+	}
+	return list[rand.Intn(len(list))].Name, nil
 }

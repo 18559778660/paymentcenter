@@ -107,6 +107,21 @@ func (m *SiteBController) SetStatus(c *gin.Context) {
 	response.SuccessMsg(c, item, "updated")
 }
 
+// Gateways B 站网关列表。
+func (m *SiteBController) Gateways(c *gin.Context) {
+	id, err := parseSiteBID(c)
+	if err != nil {
+		response.Fail(c, "无效的B站ID")
+		return
+	}
+	list, err := m.app.ListSiteBGateways(id)
+	if err != nil {
+		writeSiteBError(c, err)
+		return
+	}
+	response.Success(c, list)
+}
+
 func parseSiteBID(c *gin.Context) (uint, error) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil || id == 0 {

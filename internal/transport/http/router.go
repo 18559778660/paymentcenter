@@ -139,6 +139,7 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 
 			// B 站管理
 			authed.GET("/site-bs", siteBController.List)
+			authed.GET("/site-bs/:id/gateways", siteBController.Gateways)
 			authed.POST("/site-bs", siteBController.Create)
 			authed.PUT("/site-bs/:id", siteBController.Update)
 			authed.PUT("/site-bs/:id/status", siteBController.SetStatus)

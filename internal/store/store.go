@@ -733,8 +733,9 @@ func (s *MySQLStore) DeleteCountry(id uint) error {
 
 // ChannelListFilter 通道列表筛选。
 type ChannelListFilter struct {
-	ID   *uint
-	Name string
+	ID         *uint
+	Name       string
+	PlatformID *uint
 }
 
 // CreateChannel 插入通道。
@@ -781,6 +782,9 @@ func (s *MySQLStore) ListChannels(filter ChannelListFilter) ([]model.Channel, er
 	}
 	if filter.Name != "" {
 		q = q.Where("name LIKE ?", "%"+filter.Name+"%")
+	}
+	if filter.PlatformID != nil {
+		q = q.Where("platform_id = ?", *filter.PlatformID)
 	}
 	var list []model.Channel
 	err := q.Order("id DESC").Find(&list).Error
@@ -961,9 +965,10 @@ func (s *MySQLStore) ListPlatforms() ([]model.Platform, error) {
 
 // ChannelAccountListFilter 通道账号列表筛选。
 type ChannelAccountListFilter struct {
-	ID           *uint
-	ChannelID    *uint
-	ChannelName  string
+	ID             *uint
+	ChannelID      *uint
+	SiteBID        *uint
+	ChannelName    string
 	Alias        string
 	Remark       string
 	CreatedFrom  string
@@ -1070,6 +1075,9 @@ func (s *MySQLStore) ListChannelAccounts(filter ChannelAccountListFilter) ([]mod
 	}
 	if filter.ChannelID != nil {
 		q = q.Where("channel_accounts.channel_id = ?", *filter.ChannelID)
+	}
+	if filter.SiteBID != nil {
+		q = q.Where("channel_accounts.site_b_id = ?", *filter.SiteBID)
 	}
 	if filter.CreatedFrom != "" {
 		q = q.Where("DATE(channel_accounts.created_at) >= ?", filter.CreatedFrom)
