@@ -337,6 +337,19 @@ func (s *MySQLStore) FindMerchantByAccount(account string) (*model.Merchant, err
 	return &m, nil
 }
 
+// FindMerchantBySecretKey 按商户密钥查询。
+func (s *MySQLStore) FindMerchantBySecretKey(secretKey string) (*model.Merchant, error) {
+	var m model.Merchant
+	tx := s.db.Where("secret_key = ?", secretKey).Limit(1).Find(&m)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return nil, ErrNotFound
+	}
+	return &m, nil
+}
+
 // MaxWINMerchantAccountSeq 取已有 WIN##### 账号中的最大序号；没有则返回 -1。
 // 账号定长递增，按 account 倒序取一条即可。
 func (s *MySQLStore) MaxWINMerchantAccountSeq() (int, error) {

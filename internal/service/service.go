@@ -41,6 +41,7 @@ type Store interface {
 	GetMerchantByID(id uint) (*model.Merchant, error)
 	FindMerchantByName(name string) (*model.Merchant, error)
 	FindMerchantByAccount(account string) (*model.Merchant, error)
+	FindMerchantBySecretKey(secretKey string) (*model.Merchant, error)
 	MaxWINMerchantAccountSeq() (int, error)
 	ListMerchants(filter store.MerchantListFilter) ([]model.Merchant, error)
 	ListMerchantOptions() ([]model.Merchant, error)
@@ -120,18 +121,22 @@ type Store interface {
 
 // App 业务层入口。各业务方法拆在同包的 auth.go / menu.go / order.go / seed.go。
 type App struct {
-	store          Store
-	authSecret     string
-	tokenTTL       time.Duration
-	gatewayBaseURL string
+	store               Store
+	authSecret          string
+	tokenTTL            time.Duration
+	gatewayBaseURL      string
+	stripeAPIKey        string
+	stripeWebhookSecret string
 }
 
 // NewApp 创建业务层。store 一般传入 *store.MySQLStore。
-func NewApp(st Store, authSecret string, tokenTTL time.Duration, gatewayBaseURL string) *App {
+func NewApp(st Store, authSecret string, tokenTTL time.Duration, gatewayBaseURL, stripeAPIKey, stripeWebhookSecret string) *App {
 	return &App{
-		store:          st,
-		authSecret:     authSecret,
-		tokenTTL:       tokenTTL,
-		gatewayBaseURL: strings.TrimRight(gatewayBaseURL, "/"),
+		store:               st,
+		authSecret:          authSecret,
+		tokenTTL:            tokenTTL,
+		gatewayBaseURL:      strings.TrimRight(gatewayBaseURL, "/"),
+		stripeAPIKey:        strings.TrimSpace(stripeAPIKey),
+		stripeWebhookSecret: strings.TrimSpace(stripeWebhookSecret),
 	}
 }

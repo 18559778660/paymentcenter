@@ -9,13 +9,13 @@ import (
 )
 
 var (
-	ErrSiteANotFound      = errors.New("site a not found")
-	ErrSiteADomainExists  = errors.New("site a domain exists")
-	ErrSiteADomainInvalid = errors.New("site a domain invalid")
+	ErrSiteANotFound         = errors.New("site a not found")
+	ErrSiteADomainExists     = errors.New("site a domain exists")
+	ErrSiteADomainInvalid    = errors.New("site a domain invalid")
 	ErrSiteAFrameworkInvalid = errors.New("site a framework invalid")
-	ErrSiteAStatusInvalid = errors.New("site a status invalid")
-	ErrSiteAMerchantInvalid = errors.New("site a merchant invalid")
-	ErrSiteABatchEmpty    = errors.New("site a batch empty")
+	ErrSiteAStatusInvalid    = errors.New("site a status invalid")
+	ErrSiteAMerchantInvalid  = errors.New("site a merchant invalid")
+	ErrSiteABatchEmpty       = errors.New("site a batch empty")
 )
 
 // SiteAListItem A 站列表行。
@@ -186,6 +186,7 @@ func toSiteAListItem(item model.SiteA, merchantNames map[uint]string) SiteAListI
 	}
 }
 
+// normalizeSiteADomain 标准化 A 站域名。
 func normalizeSiteADomain(domain string) (string, error) {
 	domain = strings.TrimSpace(strings.ToLower(domain))
 	domain = strings.TrimPrefix(domain, "https://")

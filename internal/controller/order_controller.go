@@ -17,21 +17,6 @@ func NewOrderController(app *service.App) *OrderController {
 	return &OrderController{app: app}
 }
 
-// Create 创建支付中心订单。
-func (o *OrderController) Create(c *gin.Context) {
-	var req service.CreateOrderRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Fail(c, err.Error())
-		return
-	}
-	res, err := o.app.CreateOrder(req)
-	if err != nil {
-		response.Fail(c, err.Error())
-		return
-	}
-	response.SuccessMsg(c, res, "created")
-}
-
 // List 查询订单列表。
 func (o *OrderController) List(c *gin.Context) {
 	orders, err := o.app.ListOrders()

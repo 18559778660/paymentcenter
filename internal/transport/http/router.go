@@ -44,6 +44,8 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 	{
 		// A 站对接网关，无需登录
 		api.GET("/gateway", gatewayController.Access)
+		api.POST("/gateway/pay", gatewayController.Pay)
+		api.POST("/webhooks/stripe", gatewayController.StripeWebhook)
 
 		api.POST("/auth/login", authController.Login)
 		// 退出不校验 token：前端可能已清本地 token，或 token 已过期，仍应能成功退出
@@ -153,8 +155,7 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 			// 健康检查
 			authed.GET("/health", healthController.Health)
 
-			// 订单管理
-			authed.POST("/orders", orderController.Create)
+			// 订单管理（查询 / 人工补单）
 			authed.GET("/orders", orderController.List)
 			authed.GET("/orders/:id", orderController.Get)
 			authed.POST("/orders/:id/paid", orderController.MarkPaid)

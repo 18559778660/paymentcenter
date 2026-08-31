@@ -27,7 +27,7 @@ func main() {
 	}
 	defer st.Close()
 
-	app := service.NewApp(st, cfg.AuthSecret, cfg.TokenTTL, cfg.GatewayBaseURL)
+	app := service.NewApp(st, cfg.AuthSecret, cfg.TokenTTL, cfg.GatewayBaseURL, cfg.StripeAPIKey, cfg.StripeWebhook)
 	if err := app.EnsureDefaultAdmin(cfg.AdminUsername, cfg.AdminPassword); err != nil {
 		log.Fatalf("seed admin user failed: %v", err)
 	}
