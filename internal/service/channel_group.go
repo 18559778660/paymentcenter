@@ -17,6 +17,7 @@ var (
 	ErrChannelGroupNameInvalid          = errors.New("channel group name invalid")
 	ErrChannelGroupInterceptRangeInvalid = errors.New("channel group intercept range invalid")
 	ErrChannelGroupSuccessSettingInvalid   = errors.New("channel group success setting invalid")
+	ErrChannelGroupMemberBound             = errors.New("channel group member bound")
 )
 
 // ChannelGroupListItem 通道分组列表行，字段与前端 ChannelGroupRow 对齐。
@@ -47,6 +48,7 @@ type ChannelGroupListItem struct {
 	CollectRule           string   `json:"collectRule"`
 	AutoShip              bool     `json:"autoShip"`
 	AvailableAccountCount int      `json:"availableAccountCount"`
+	MemberCount           int      `json:"memberCount"`
 	GatewayURL            string   `json:"gatewayUrl"`
 	CreatedBy             string   `json:"createdBy"`
 	CreatedAt             string   `json:"createdAt"`
@@ -221,6 +223,24 @@ func (a *App) UpdateChannelGroup(id uint, req UpdateChannelGroupRequest, operato
 	return a.getChannelGroupItem(item.ID)
 }
 
+// DeleteChannelGroup 删除通道分组，仍有账号绑定时不允许删除。
+func (a *App) DeleteChannelGroup(id uint) error {
+	if _, err := a.store.GetChannelGroupByID(id); err != nil {
+		if isNotFound(err) {
+			return ErrChannelGroupNotFound
+		}
+		return err
+	}
+	count, err := a.store.CountChannelGroupMembersByGroupID(id)
+	if err != nil {
+		return err
+	}
+	if count > 0 {
+		return ErrChannelGroupMemberBound
+	}
+	return a.store.DeleteChannelGroup(id)
+}
+
 // ChannelGroupAccountItem 分组账号列表行。
 type ChannelGroupAccountItem struct {
 	ID            uint   `json:"id"`
@@ -342,6 +362,10 @@ func (a *App) toChannelGroupListItem(item model.ChannelGroup) (ChannelGroupListI
 	if err != nil {
 		return ChannelGroupListItem{}, err
 	}
+	memberCount, err := a.store.CountChannelGroupMembersByGroupID(item.ID)
+	if err != nil {
+		return ChannelGroupListItem{}, err
+	}
 	return ChannelGroupListItem{
 		ID:                    item.ID,
 		Code:                  item.Code,
@@ -369,6 +393,7 @@ func (a *App) toChannelGroupListItem(item model.ChannelGroup) (ChannelGroupListI
 		CollectRule:           item.CollectRule,
 		AutoShip:              item.AutoShip,
 		AvailableAccountCount: int(availableCount),
+		MemberCount:           int(memberCount),
 		GatewayURL:            a.BuildGroupGatewayURL(item.Code),
 		CreatedBy:             item.CreatedBy,
 		CreatedAt:             item.CreatedAt.Format("2006-01-02 15:04:05"),

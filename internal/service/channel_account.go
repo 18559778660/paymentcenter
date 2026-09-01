@@ -15,6 +15,7 @@ var (
 	ErrChannelAccountSiteBInvalid      = errors.New("channel account site b invalid")
 	ErrChannelAccountChannelSiteBExists = errors.New("channel account channel site b exists")
 	ErrChannelAccountSuccessSettingInvalid = errors.New("channel account success setting invalid")
+	ErrChannelAccountGroupBound            = errors.New("channel account group bound")
 )
 
 // ChannelAccountListItem 通道账号列表行。
@@ -393,6 +394,24 @@ func (a *App) SetChannelAccountStatus(id uint, enabled bool, operator string) (*
 		return nil, err
 	}
 	return a.getChannelAccountItem(item.ID)
+}
+
+// DeleteChannelAccount 删除通道账号，已绑定分组时不允许删除。
+func (a *App) DeleteChannelAccount(id uint) error {
+	if _, err := a.store.GetChannelAccountByID(id); err != nil {
+		if isNotFound(err) {
+			return ErrChannelAccountNotFound
+		}
+		return err
+	}
+	count, err := a.store.CountChannelGroupMembersByAccountID(id)
+	if err != nil {
+		return err
+	}
+	if count > 0 {
+		return ErrChannelAccountGroupBound
+	}
+	return a.store.DeleteChannelAccount(id)
 }
 
 func (a *App) getChannelAccountItem(id uint) (*ChannelAccountListItem, error) {

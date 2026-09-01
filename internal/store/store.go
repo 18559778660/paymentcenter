@@ -1125,6 +1125,27 @@ func (s *MySQLStore) ListChannelAccounts(filter ChannelAccountListFilter) ([]mod
 	return list, err
 }
 
+// DeleteChannelAccount 删除通道账号。
+func (s *MySQLStore) DeleteChannelAccount(id uint) error {
+	tx := s.db.Delete(&model.ChannelAccount{}, id)
+	if tx.Error != nil {
+		return tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+// CountChannelGroupMembersByAccountID 统计账号绑定的分组数量。
+func (s *MySQLStore) CountChannelGroupMembersByAccountID(accountID uint) (int64, error) {
+	var count int64
+	err := s.db.Model(&model.ChannelGroupMember{}).
+		Where("channel_account_id = ?", accountID).
+		Count(&count).Error
+	return count, err
+}
+
 // ChannelGroupListFilter 通道分组列表筛选。
 type ChannelGroupListFilter struct {
 	ID   *uint
@@ -1192,6 +1213,27 @@ func (s *MySQLStore) ListChannelGroups(filter ChannelGroupListFilter) ([]model.C
 	var list []model.ChannelGroup
 	err := q.Order("id DESC").Find(&list).Error
 	return list, err
+}
+
+// DeleteChannelGroup 删除通道分组。
+func (s *MySQLStore) DeleteChannelGroup(id uint) error {
+	tx := s.db.Delete(&model.ChannelGroup{}, id)
+	if tx.Error != nil {
+		return tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+// CountChannelGroupMembersByGroupID 统计分组绑定的通道账号数量。
+func (s *MySQLStore) CountChannelGroupMembersByGroupID(groupID uint) (int64, error) {
+	var count int64
+	err := s.db.Model(&model.ChannelGroupMember{}).
+		Where("group_id = ?", groupID).
+		Count(&count).Error
+	return count, err
 }
 
 // CountEnabledChannelAccountsByGroupID 统计分组下启用的通道账号数。

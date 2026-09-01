@@ -152,6 +152,20 @@ func (m *ChannelAccountController) SetStatus(c *gin.Context) {
 	response.Success(c, item)
 }
 
+// Delete 删除通道账号。
+func (m *ChannelAccountController) Delete(c *gin.Context) {
+	id, err := parseChannelAccountID(c)
+	if err != nil {
+		response.Fail(c, "无效的账号ID")
+		return
+	}
+	if err := m.app.DeleteChannelAccount(id); err != nil {
+		writeChannelAccountError(c, err)
+		return
+	}
+	response.SuccessMsg(c, nil, "deleted")
+}
+
 func parseChannelAccountID(c *gin.Context) (uint, error) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil || id == 0 {
@@ -174,6 +188,8 @@ func writeChannelAccountError(c *gin.Context, err error) {
 		response.Fail(c, "该通道与B站已存在绑定账号")
 	case errors.Is(err, service.ErrChannelAccountSuccessSettingInvalid):
 		response.Fail(c, "成功设置需同时配置支付频率和指定时间内限制成功次数")
+	case errors.Is(err, service.ErrChannelAccountGroupBound):
+		response.Fail(c, "该账号已绑定通道分组，无法删除")
 	case errors.Is(err, service.ErrChannelInterceptRangeInvalid):
 		response.Fail(c, "限制最小金额不能高于限制最大金额")
 	default:

@@ -75,6 +75,20 @@ func (m *ChannelGroupController) Update(c *gin.Context) {
 	response.SuccessMsg(c, item, "updated")
 }
 
+// Delete 删除通道分组。
+func (m *ChannelGroupController) Delete(c *gin.Context) {
+	id, err := parseChannelGroupID(c)
+	if err != nil {
+		response.Fail(c, "无效的分组ID")
+		return
+	}
+	if err := m.app.DeleteChannelGroup(id); err != nil {
+		writeChannelGroupError(c, err)
+		return
+	}
+	response.SuccessMsg(c, nil, "deleted")
+}
+
 // ListAccounts 分组下的通道账号列表（默认全部账号，标记归属状态）。
 func (m *ChannelGroupController) ListAccounts(c *gin.Context) {
 	id, err := parseChannelGroupID(c)
@@ -155,6 +169,8 @@ func writeChannelGroupError(c *gin.Context, err error) {
 		response.Fail(c, "限制最小金额不能高于限制最大金额")
 	case errors.Is(err, service.ErrChannelGroupSuccessSettingInvalid):
 		response.Fail(c, "成功设置需同时配置支付频率，以及成功次数或失败次数")
+	case errors.Is(err, service.ErrChannelGroupMemberBound):
+		response.Fail(c, "该分组仍绑定通道账号，无法删除")
 	default:
 		response.Fail(c, err.Error())
 	}

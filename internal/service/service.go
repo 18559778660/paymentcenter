@@ -98,12 +98,16 @@ type Store interface {
 	GetChannelAccountByID(id uint) (*model.ChannelAccount, error)
 	FindChannelAccountByChannelAndSiteB(channelID, siteBID uint) (*model.ChannelAccount, error)
 	ListChannelAccounts(filter store.ChannelAccountListFilter) ([]model.ChannelAccount, error)
+	DeleteChannelAccount(id uint) error
+	CountChannelGroupMembersByAccountID(accountID uint) (int64, error)
 	CreateChannelGroup(item *model.ChannelGroup) error
 	SaveChannelGroup(item *model.ChannelGroup) error
 	GetChannelGroupByID(id uint) (*model.ChannelGroup, error)
 	FindChannelGroupByCode(code string) (*model.ChannelGroup, error)
 	FindChannelGroupByName(name string) (*model.ChannelGroup, error)
 	ListChannelGroups(filter store.ChannelGroupListFilter) ([]model.ChannelGroup, error)
+	DeleteChannelGroup(id uint) error
+	CountChannelGroupMembersByGroupID(groupID uint) (int64, error)
 	CountEnabledChannelAccountsByGroupID(groupID uint) (int64, error)
 	AddChannelGroupMember(groupID, accountID uint) error
 	RemoveChannelGroupMember(groupID, accountID uint) error

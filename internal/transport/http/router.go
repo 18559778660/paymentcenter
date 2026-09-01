@@ -120,11 +120,13 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 			authed.PUT("/channel-accounts/:id", channelAccountController.Update)
 			authed.PUT("/channel-accounts/:id/limits", channelAccountController.UpdateLimits)
 			authed.PUT("/channel-accounts/:id/status", channelAccountController.SetStatus)
+			authed.DELETE("/channel-accounts/:id", channelAccountController.Delete)
 
 			// 通道分组
 			authed.GET("/channel-groups", channelGroupController.List)
 			authed.POST("/channel-groups", channelGroupController.Create)
 			authed.PUT("/channel-groups/:id", channelGroupController.Update)
+			authed.DELETE("/channel-groups/:id", channelGroupController.Delete)
 			authed.GET("/channel-groups/:id/accounts", channelGroupController.ListAccounts)
 			authed.PUT("/channel-groups/:id/accounts/:accountId/membership", channelGroupController.SetAccountMembership)
 
