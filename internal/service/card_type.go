@@ -23,7 +23,7 @@ var (
 	ErrCardTypePrefixInvalid = errors.New("card type prefix invalid")
 )
 
-//go:embed card_brands.json
+//go:embed data/card_brands.json
 var cardBrandsJSON []byte
 
 // cardTypeConfig 卡品牌配置，每条字段必须齐全。

@@ -21,7 +21,7 @@ var (
 	ErrCountryCardBinInvalid = errors.New("country card bin ratio invalid")
 )
 
-//go:embed countries.json
+//go:embed data/countries.json
 var countriesJSON []byte
 
 type countryConfig struct {

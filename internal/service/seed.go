@@ -9,7 +9,7 @@ import (
 	"paymentcenter/internal/store"
 )
 
-// menusJSON 内置菜单种子，改菜单编辑 menus.json 即可。
+// menusJSON 内置菜单种子，改菜单编辑 data/menus.json 即可。
 //
 // 顶层结构字段：name / title / path / component / icon / authCode / type / sort
 // type：0目录 1菜单 2按钮
@@ -21,10 +21,10 @@ import (
 //	affixTab            标签栏钉住，关不掉
 //	keepAlive           页面缓存（需要时再加）
 //
-//go:embed menus.json
+//go:embed data/menus.json
 var menusJSON []byte
 
-//go:embed stripe_word_bank_directories.json
+//go:embed data/stripe_word_bank_directories.json
 var stripeWordBankDirectoriesJSON []byte
 
 // menuSeed 初始化菜单用的内存结构，启动时写入 menus 表。

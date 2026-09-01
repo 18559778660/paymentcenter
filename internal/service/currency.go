@@ -21,7 +21,7 @@ var (
 	ErrCurrencyRateInvalid = errors.New("currency rate invalid")
 )
 
-//go:embed currencies.json
+//go:embed data/currencies.json
 var currenciesJSON []byte
 
 type currencyConfig struct {
