@@ -190,6 +190,12 @@ func writeChannelAccountError(c *gin.Context, err error) {
 		response.Fail(c, "成功设置需同时配置支付频率和指定时间内限制成功次数")
 	case errors.Is(err, service.ErrChannelAccountGroupBound):
 		response.Fail(c, "该账号已绑定通道分组，无法删除")
+	case errors.Is(err, service.ErrChannelAccountAppIDMissing):
+		response.Fail(c, "请输入公钥")
+	case errors.Is(err, service.ErrChannelAccountPrivateKeyMissing):
+		response.Fail(c, "请输入私钥")
+	case errors.Is(err, service.ErrChannelAccountWebSecretMissing):
+		response.Fail(c, "请输入web秘钥")
 	case errors.Is(err, service.ErrChannelInterceptRangeInvalid):
 		response.Fail(c, "限制最小金额不能高于限制最大金额")
 	default:

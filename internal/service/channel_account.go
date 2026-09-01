@@ -16,6 +16,9 @@ var (
 	ErrChannelAccountChannelSiteBExists = errors.New("channel account channel site b exists")
 	ErrChannelAccountSuccessSettingInvalid = errors.New("channel account success setting invalid")
 	ErrChannelAccountGroupBound            = errors.New("channel account group bound")
+	ErrChannelAccountAppIDMissing          = errors.New("channel account app id missing")
+	ErrChannelAccountPrivateKeyMissing     = errors.New("channel account private key missing")
+	ErrChannelAccountWebSecretMissing      = errors.New("channel account web secret missing")
 )
 
 // ChannelAccountListItem 通道账号列表行。
@@ -228,6 +231,9 @@ func (a *App) CreateChannelAccount(req CreateChannelAccountRequest, operator str
 	if exist, err := a.store.FindChannelAccountByChannelAndSiteB(req.ChannelID, req.SiteBID); err == nil && exist != nil {
 		return nil, ErrChannelAccountChannelSiteBExists
 	} else if err != nil && !isNotFound(err) {
+		return nil, err
+	}
+	if err := validateChannelAccountCredentials(req.AppID, req.PrivateKey, req.WebSecret); err != nil {
 		return nil, err
 	}
 	status := model.ChannelAccountStatusEnabled
@@ -581,6 +587,19 @@ func validateAccountSuccessSetting(payFrequency, successCountLimit int) error {
 	}
 	if hasCount && !hasFrequency {
 		return ErrChannelAccountSuccessSettingInvalid
+	}
+	return nil
+}
+
+func validateChannelAccountCredentials(appID, privateKey, webSecret string) error {
+	if strings.TrimSpace(appID) == "" {
+		return ErrChannelAccountAppIDMissing
+	}
+	if strings.TrimSpace(privateKey) == "" {
+		return ErrChannelAccountPrivateKeyMissing
+	}
+	if strings.TrimSpace(webSecret) == "" {
+		return ErrChannelAccountWebSecretMissing
 	}
 	return nil
 }
