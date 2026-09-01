@@ -17,9 +17,10 @@ const (
 type Order struct {
 	ID            string      `gorm:"column:id;type:varchar(64);primaryKey" json:"id"`                        // 支付中心订单号
 	MerchantOrder string      `gorm:"column:merchant_order;type:varchar(128);not null;index" json:"merchant_order"` // A站订单号
-	MerchantSite  string      `gorm:"column:merchant_site;type:varchar(255);not null" json:"merchant_site"`   // A站站点标识
-	Channel       string      `gorm:"column:channel;type:varchar(64);not null" json:"channel"`                // 通道代码
-	Provider      string      `gorm:"column:provider;type:varchar(64);not null" json:"provider"`              // 支付平台，例如 stripe
+	MerchantSite     string      `gorm:"column:merchant_site;type:varchar(255);not null" json:"merchant_site"`   // A站站点标识
+	Channel          string      `gorm:"column:channel;type:varchar(64);not null" json:"channel"`                // 通道代码
+	ChannelAccountID uint        `gorm:"column:channel_account_id;not null;default:0;index" json:"channel_account_id"` // 通道账号ID
+	Provider         string      `gorm:"column:provider;type:varchar(64);not null" json:"provider"`              // 支付平台，例如 stripe
 	Amount        int64       `gorm:"column:amount;not null" json:"amount"`                                   // 金额，最小货币单位
 	Currency      string      `gorm:"column:currency;type:varchar(16);not null" json:"currency"`              // 币种
 	ReturnURL     string      `gorm:"column:return_url;type:text;not null" json:"return_url"`                 // 同步返回地址

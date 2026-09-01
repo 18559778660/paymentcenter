@@ -21,13 +21,15 @@ import (
 
 // 网关支付错误。
 var (
-	ErrGatewayMerchantInvalid     = errors.New("gateway merchant invalid")
-	ErrGatewaySiteInvalid         = errors.New("gateway site invalid")
-	ErrGatewayRouteInvalid        = errors.New("gateway route invalid")
-	ErrGatewayChannelDisabled     = errors.New("gateway channel disabled")
-	ErrGatewayAccountUnavailable  = errors.New("gateway account unavailable")
-	ErrGatewayPlatformUnsupported = errors.New("gateway platform unsupported")
-	ErrGatewayStripeFailed        = errors.New("gateway stripe failed")
+	ErrGatewayMerchantInvalid             = errors.New("gateway merchant invalid")
+	ErrGatewaySiteInvalid                 = errors.New("gateway site invalid")
+	ErrGatewayRouteInvalid                = errors.New("gateway route invalid")
+	ErrGatewayChannelDisabled             = errors.New("gateway channel disabled")
+	ErrGatewayAccountUnavailable          = errors.New("gateway account unavailable")
+	ErrGatewayPlatformUnsupported         = errors.New("gateway platform unsupported")
+	ErrGatewayStripeFailed                = errors.New("gateway stripe failed")
+	ErrGatewayAccountStripeKeyMissing     = errors.New("gateway account stripe key missing")
+	ErrGatewayAccountWebhookSecretMissing = errors.New("gateway account webhook secret missing")
 )
 
 // GatewayPayRequest A 站经网关发起支付。
@@ -48,7 +50,7 @@ type GatewayPayQuery struct {
 	Group   string
 }
 
-// GatewayPay A 站经网关创建 Stripe Checkout 并落库订单。
+// GatewayPay A 站经网关创建支付并落库订单，按通道所属平台分发。
 func (a *App) GatewayPay(req GatewayPayRequest, q GatewayPayQuery, secretKey string) (CreateOrderResponse, error) {
 	secretKey = firstNonEmpty(strings.TrimSpace(secretKey), strings.TrimSpace(req.SecretKey))
 	if secretKey == "" {
@@ -86,55 +88,53 @@ func (a *App) GatewayPay(req GatewayPayRequest, q GatewayPayQuery, secretKey str
 	if err != nil {
 		return CreateOrderResponse{}, err
 	}
-	platform, err := a.getPlatformByID(channel.PlatformID)
-	if err != nil || platform.Code != model.PlatformCodeStripe {
-		return CreateOrderResponse{}, ErrGatewayPlatformUnsupported
-	}
 	if channel.Status != model.ChannelStatusEnabled {
 		return CreateOrderResponse{}, ErrGatewayChannelDisabled
 	}
+	platform, err := a.getPlatformByID(channel.PlatformID)
+	if err != nil {
+		if errors.Is(err, ErrChannelPlatformInvalid) {
+			return CreateOrderResponse{}, ErrGatewayPlatformUnsupported
+		}
+		return CreateOrderResponse{}, err
+	}
+	if err := validateGatewayAccount(platform, account); err != nil {
+		return CreateOrderResponse{}, err
+	}
 
-	stripeKey := resolveStripeSecretKey(account, a.stripeAPIKey)
 	now := time.Now().UTC()
 	orderID := "pc_" + strconv.FormatInt(now.UnixNano(), 10)
 	order := &model.Order{
-		ID:            orderID,
-		MerchantOrder: strings.TrimSpace(req.MerchantOrder),
-		MerchantSite:  siteDomain,
-		Channel:       channel.Name,
-		Provider:      model.PlatformCodeStripe,
-		Amount:        req.Amount,
-		Currency:      strings.ToLower(strings.TrimSpace(req.Currency)),
-		ReturnURL:     strings.TrimSpace(req.ReturnURL),
-		NotifyURL:     strings.TrimSpace(req.NotifyURL),
-		Status:        model.OrderStatusCreated,
-		CreatedAt:     now,
-		UpdatedAt:     now,
+		ID:               orderID,
+		MerchantOrder:    strings.TrimSpace(req.MerchantOrder),
+		MerchantSite:     siteDomain,
+		Channel:          channel.Name,
+		ChannelAccountID: account.ID,
+		Provider:         platform.Code,
+		Amount:           req.Amount,
+		Currency:         strings.ToLower(strings.TrimSpace(req.Currency)),
+		ReturnURL:        strings.TrimSpace(req.ReturnURL),
+		NotifyURL:        strings.TrimSpace(req.NotifyURL),
+		Status:           model.OrderStatusCreated,
+		CreatedAt:        now,
+		UpdatedAt:        now,
 	}
 	if err := a.store.SaveOrder(order); err != nil {
 		return CreateOrderResponse{}, err
 	}
 
-	checkout, err := createStripeCheckoutSession(stripeCheckoutInput{
-		SecretKey:     stripeKey,
-		OrderID:       order.ID,
-		MerchantOrder: order.MerchantOrder,
-		Amount:        order.Amount,
-		Currency:      order.Currency,
-		Subject:       req.Subject,
-		ReturnURL:     order.ReturnURL,
-	})
+	checkoutURL, providerRef, err := a.createGatewayCheckout(platform, account, order, req.Subject)
 	if err != nil {
 		order.Status = model.OrderStatusFailed
 		order.ErrorMessage = err.Error()
 		order.UpdatedAt = time.Now().UTC()
 		_ = a.store.SaveOrder(order)
-		return CreateOrderResponse{}, fmt.Errorf("%w: %v", ErrGatewayStripeFailed, err)
+		return CreateOrderResponse{}, err
 	}
 
 	order.Status = model.OrderStatusPending
-	order.CheckoutURL = checkout.CheckoutURL
-	order.ProviderRef = checkout.SessionID
+	order.CheckoutURL = checkoutURL
+	order.ProviderRef = providerRef
 	order.UpdatedAt = time.Now().UTC()
 	if err := a.store.SaveOrder(order); err != nil {
 		return CreateOrderResponse{}, err
@@ -144,6 +144,48 @@ func (a *App) GatewayPay(req GatewayPayRequest, q GatewayPayQuery, secretKey str
 		Status:      string(order.Status),
 		CheckoutURL: order.CheckoutURL,
 	}, nil
+}
+
+// validateGatewayAccount 按平台校验通道账号配置是否完整。
+func validateGatewayAccount(platform *model.Platform, account *model.ChannelAccount) error {
+	switch platform.Code {
+	case model.PlatformCodeStripe:
+		if _, err := requireStripeSecretKey(account); err != nil {
+			return err
+		}
+		if _, err := requireStripeWebhookSecret(account); err != nil {
+			return err
+		}
+		return nil
+	default:
+		return ErrGatewayPlatformUnsupported
+	}
+}
+
+// createGatewayCheckout 按平台创建支付会话。
+func (a *App) createGatewayCheckout(platform *model.Platform, account *model.ChannelAccount, order *model.Order, subject string) (checkoutURL, providerRef string, err error) {
+	switch platform.Code {
+	case model.PlatformCodeStripe:
+		stripeKey, err := requireStripeSecretKey(account)
+		if err != nil {
+			return "", "", err
+		}
+		checkout, err := createStripeCheckoutSession(stripeCheckoutInput{
+			SecretKey:     stripeKey,
+			OrderID:       order.ID,
+			MerchantOrder: order.MerchantOrder,
+			Amount:        order.Amount,
+			Currency:      order.Currency,
+			Subject:       subject,
+			ReturnURL:     order.ReturnURL,
+		})
+		if err != nil {
+			return "", "", fmt.Errorf("%w: %v", ErrGatewayStripeFailed, err)
+		}
+		return checkout.CheckoutURL, checkout.SessionID, nil
+	default:
+		return "", "", ErrGatewayPlatformUnsupported
+	}
 }
 
 // resolveGatewayRoute 解析网关路由。
@@ -236,14 +278,42 @@ func (a *App) pickChannelAccount(channelID uint, accountIDs []uint) (*model.Chan
 	return &enabled[rand.Intn(len(enabled))], nil
 }
 
-// resolveStripeSecretKey 取通道账号 Stripe Secret Key（private_key）。
-func resolveStripeSecretKey(account *model.ChannelAccount, fallback string) string {
-	if account != nil {
-		if key := strings.TrimSpace(account.PrivateKey); key != "" {
-			return key
-		}
+// requireStripeSecretKey 取通道账号 Stripe Secret Key（private_key），未配置则报错。
+func requireStripeSecretKey(account *model.ChannelAccount) (string, error) {
+	if account == nil {
+		return "", ErrGatewayAccountStripeKeyMissing
 	}
-	return strings.TrimSpace(fallback)
+	key := strings.TrimSpace(account.PrivateKey)
+	if key == "" {
+		return "", ErrGatewayAccountStripeKeyMissing
+	}
+	return key, nil
+}
+
+// requireStripeWebhookSecret 取通道账号 Stripe Webhook Secret（web_secret），未配置则报错。
+func requireStripeWebhookSecret(account *model.ChannelAccount) (string, error) {
+	if account == nil {
+		return "", ErrGatewayAccountWebhookSecretMissing
+	}
+	secret := strings.TrimSpace(account.WebSecret)
+	if secret == "" {
+		return "", ErrGatewayAccountWebhookSecretMissing
+	}
+	return secret, nil
+}
+
+// stripeCheckoutSessionEvent Stripe Checkout 会话事件。
+type stripeCheckoutSessionEvent struct {
+	ClientReferenceID string            `json:"client_reference_id"`
+	Metadata          map[string]string `json:"metadata"`
+}
+
+// stripeWebhookEventThin Stripe Webhook 事件精简版。
+type stripeWebhookEventThin struct {
+	Type string `json:"type"`
+	Data struct {
+		Object json.RawMessage `json:"object"`
+	} `json:"data"`
 }
 
 // firstNonEmpty 返回第一个非空字符串。
@@ -256,12 +326,57 @@ func firstNonEmpty(values ...string) string {
 	return ""
 }
 
-// HandleStripeWebhook 处理 Stripe 回调，更新订单并通知 A 站。
-func (a *App) HandleStripeWebhook(payload []byte, signature string) error {
-	if a.stripeWebhookSecret == "" {
-		return fmt.Errorf("stripe webhook secret not configured")
+// peekStripeWebhookOrderID 从 Stripe Webhook 事件中提取订单 ID。
+func peekStripeWebhookOrderID(payload []byte) (string, error) {
+	var thin stripeWebhookEventThin
+	if err := json.Unmarshal(payload, &thin); err != nil {
+		return "", err
 	}
-	event, err := webhook.ConstructEvent(payload, signature, a.stripeWebhookSecret)
+	if thin.Type != "checkout.session.completed" {
+		return "", nil
+	}
+	var sess stripeCheckoutSessionEvent
+	if err := json.Unmarshal(thin.Data.Object, &sess); err != nil {
+		return "", err
+	}
+	orderID := strings.TrimSpace(sess.ClientReferenceID)
+	if orderID == "" && sess.Metadata != nil {
+		orderID = strings.TrimSpace(sess.Metadata["order_id"])
+	}
+	return orderID, nil
+}
+
+// HandleStripeWebhook 处理 Stripe 回调，按订单关联的通道账号 web_secret 验签。
+func (a *App) HandleStripeWebhook(payload []byte, signature string) error {
+	orderID, err := peekStripeWebhookOrderID(payload)
+	if err != nil {
+		return err
+	}
+	if orderID == "" {
+		return nil
+	}
+	order, err := a.store.GetOrder(orderID)
+	if err != nil {
+		if isNotFound(err) {
+			return nil
+		}
+		return err
+	}
+	if order.ChannelAccountID == 0 {
+		return ErrGatewayAccountWebhookSecretMissing
+	}
+	account, err := a.store.GetChannelAccountByID(order.ChannelAccountID)
+	if err != nil {
+		if isNotFound(err) {
+			return ErrGatewayAccountWebhookSecretMissing
+		}
+		return err
+	}
+	webhookSecret, err := requireStripeWebhookSecret(account)
+	if err != nil {
+		return err
+	}
+	event, err := webhook.ConstructEvent(payload, signature, webhookSecret)
 	if err != nil {
 		return err
 	}
@@ -269,20 +384,6 @@ func (a *App) HandleStripeWebhook(payload []byte, signature string) error {
 	case "checkout.session.completed":
 		var sess stripe.CheckoutSession
 		if err := json.Unmarshal(event.Data.Raw, &sess); err != nil {
-			return err
-		}
-		orderID := strings.TrimSpace(sess.ClientReferenceID)
-		if orderID == "" && sess.Metadata != nil {
-			orderID = strings.TrimSpace(sess.Metadata["order_id"])
-		}
-		if orderID == "" {
-			return nil
-		}
-		order, err := a.store.GetOrder(orderID)
-		if err != nil {
-			if isNotFound(err) {
-				return nil
-			}
 			return err
 		}
 		if order.Status == model.OrderStatusPaid {

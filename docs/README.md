@@ -128,8 +128,9 @@ set PAYMENT_CENTER_ADDR=:8081
 - `AUTH_TOKEN_TTL_HOURS`
 - `ADMIN_USERNAME`
 - `ADMIN_PASSWORD`
-- `STRIPE_API_KEY`
-- `STRIPE_WEBHOOK_SECRET`
+- `GATEWAY_BASE_URL`
+
+Stripe 密钥（`private_key`、`web_secret`）在后台「通道账号」中按账号配置，不使用全局环境变量。
 
 ## 接口
 

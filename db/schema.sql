@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS payment_orders (
   merchant_order VARCHAR(128) NOT NULL COMMENT 'A站订单号',
   merchant_site VARCHAR(255) NOT NULL COMMENT 'A站域名或站点标识',
   channel VARCHAR(64) NOT NULL COMMENT '通道代码，例如 win_stripe',
+  channel_account_id BIGINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '通道账号ID',
   provider VARCHAR(64) NOT NULL COMMENT '支付平台，例如 stripe',
   amount BIGINT NOT NULL COMMENT '最小货币单位金额，例如分/cent',
   currency VARCHAR(16) NOT NULL COMMENT '币种',
@@ -22,6 +23,7 @@ CREATE TABLE IF NOT EXISTS payment_orders (
   updated_at DATETIME NOT NULL,
   PRIMARY KEY (id),
   KEY idx_merchant_order (merchant_order),
+  KEY idx_channel_account_id (channel_account_id),
   KEY idx_status (status),
   KEY idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

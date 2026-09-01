@@ -77,6 +77,10 @@ func writeGatewayPayError(c *gin.Context, err error) {
 		response.Fail(c, "通道已禁用")
 	case errors.Is(err, service.ErrGatewayAccountUnavailable):
 		response.Fail(c, "暂无可用通道账号")
+	case errors.Is(err, service.ErrGatewayAccountStripeKeyMissing):
+		response.Fail(c, "通道账号未配置 Stripe 私钥")
+	case errors.Is(err, service.ErrGatewayAccountWebhookSecretMissing):
+		response.Fail(c, "通道账号未配置 Webhook 密钥")
 	case errors.Is(err, service.ErrGatewayPlatformUnsupported):
 		response.Fail(c, "当前仅支持 Stripe 直连")
 	case errors.Is(err, service.ErrGatewayStripeFailed):
