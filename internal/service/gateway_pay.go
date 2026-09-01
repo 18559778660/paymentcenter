@@ -192,6 +192,7 @@ func (a *App) resolveGatewayRoute(q GatewayPayQuery) (*model.Channel, *model.Cha
 		}
 		return nil, nil, err
 	}
+	// 返回通道和账号。
 	return channel, account, nil
 }
 
@@ -231,17 +232,15 @@ func (a *App) pickChannelAccount(channelID uint, accountIDs []uint) (*model.Chan
 	if len(enabled) == 0 {
 		return nil, ErrGatewayAccountUnavailable
 	}
+	// 随机选择一个通道账号。
 	return &enabled[rand.Intn(len(enabled))], nil
 }
 
-// resolveStripeSecretKey 解析 Stripe 密钥。
+// resolveStripeSecretKey 取通道账号 Stripe Secret Key（private_key）。
 func resolveStripeSecretKey(account *model.ChannelAccount, fallback string) string {
 	if account != nil {
-		for _, key := range []string{account.PrivateKey, account.WebSecret, account.AppID} {
-			key = strings.TrimSpace(key)
-			if strings.HasPrefix(key, "sk_") {
-				return key
-			}
+		if key := strings.TrimSpace(account.PrivateKey); key != "" {
+			return key
 		}
 	}
 	return strings.TrimSpace(fallback)

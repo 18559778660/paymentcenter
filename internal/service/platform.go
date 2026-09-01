@@ -33,6 +33,7 @@ func (a *App) ListPlatformOptions() ([]PlatformOption, error) {
 	return out, nil
 }
 
+// loadPlatformMetaMap 加载平台元数据映射。
 func (a *App) loadPlatformMetaMap() (map[uint]model.Platform, error) {
 	list, err := a.store.ListPlatforms()
 	if err != nil {
@@ -45,6 +46,7 @@ func (a *App) loadPlatformMetaMap() (map[uint]model.Platform, error) {
 	return result, nil
 }
 
+// getPlatformByID 根据 ID 获取平台。
 func (a *App) getPlatformByID(id uint) (*model.Platform, error) {
 	platform, err := a.store.GetPlatformByID(id)
 	if err != nil {
