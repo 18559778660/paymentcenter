@@ -804,6 +804,27 @@ func (s *MySQLStore) ListChannels(filter ChannelListFilter) ([]model.Channel, er
 	return list, err
 }
 
+// DeleteChannel 删除通道。
+func (s *MySQLStore) DeleteChannel(id uint) error {
+	tx := s.db.Delete(&model.Channel{}, id)
+	if tx.Error != nil {
+		return tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+// CountChannelAccountsByChannelID 统计通道下的账号数量。
+func (s *MySQLStore) CountChannelAccountsByChannelID(channelID uint) (int64, error) {
+	var count int64
+	err := s.db.Model(&model.ChannelAccount{}).
+		Where("channel_id = ?", channelID).
+		Count(&count).Error
+	return count, err
+}
+
 // SiteAListFilter A 站列表筛选。
 type SiteAListFilter struct {
 	MerchantID *uint

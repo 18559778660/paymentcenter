@@ -41,7 +41,7 @@ func (a *App) SetChannelPackage(id uint, relativePath, operator string) (*Channe
 	if oldPath != "" && oldPath != relativePath {
 		removeChannelPackageFile(oldPath)
 	}
-	out, err := a.buildChannelListItem(*item)
+	out, err := a.buildChannelListItem(*item, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -85,6 +85,16 @@ func removeChannelPackageFile(relativePath string) {
 		return
 	}
 	_ = os.Remove(channelPackageAbsPath(relativePath))
+}
+
+// removeChannelPackageAssets 删除通道关联的压缩包及 uploads/channels/{id} 目录。
+func removeChannelPackageAssets(channelID uint, relativePath string) {
+	removeChannelPackageFile(relativePath)
+	if channelID == 0 {
+		return
+	}
+	dir := filepath.Join("uploads", channelPackageRoot, fmt.Sprintf("%d", channelID))
+	_ = os.RemoveAll(dir)
 }
 
 func sanitizePackageFilename(name string) string {

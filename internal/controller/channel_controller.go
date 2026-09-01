@@ -172,6 +172,20 @@ func (m *ChannelController) UploadPackage(c *gin.Context) {
 	response.SuccessMsg(c, item, "上传成功")
 }
 
+// Delete 删除通道。
+func (m *ChannelController) Delete(c *gin.Context) {
+	id, err := parseChannelID(c)
+	if err != nil {
+		response.Fail(c, "无效的通道ID")
+		return
+	}
+	if err := m.app.DeleteChannel(id); err != nil {
+		writeChannelError(c, err)
+		return
+	}
+	response.SuccessMsg(c, nil, "deleted")
+}
+
 // DownloadPackage 下载通道压缩包。
 func (m *ChannelController) DownloadPackage(c *gin.Context) {
 	id, err := parseChannelID(c)
@@ -221,6 +235,8 @@ func writeChannelError(c *gin.Context, err error) {
 		response.Fail(c, "成功设置需同时配置支付频率，以及成功次数或失败次数")
 	case errors.Is(err, service.ErrChannelPlatformInvalid):
 		response.Fail(c, "请选择有效通道平台")
+	case errors.Is(err, service.ErrChannelHasAccounts):
+		response.Fail(c, "该通道仍有关联通道账号，无法删除")
 	default:
 		response.Fail(c, err.Error())
 	}

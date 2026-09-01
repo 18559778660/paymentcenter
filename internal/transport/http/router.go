@@ -111,6 +111,7 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 			authed.PUT("/channels/:id", channelController.Update)
 			authed.PUT("/channels/:id/limits", channelController.UpdateLimits)
 			authed.PUT("/channels/:id/status", channelController.SetStatus)
+			authed.DELETE("/channels/:id", channelController.Delete)
 			authed.POST("/channels/:id/package", channelController.UploadPackage)
 			authed.GET("/channels/:id/package", channelController.DownloadPackage)
 

@@ -79,6 +79,8 @@ type Store interface {
 	GetChannelByID(id uint) (*model.Channel, error)
 	FindChannelByName(name string) (*model.Channel, error)
 	ListChannels(filter store.ChannelListFilter) ([]model.Channel, error)
+	DeleteChannel(id uint) error
+	CountChannelAccountsByChannelID(channelID uint) (int64, error)
 	CreateSiteA(item *model.SiteA) error
 	GetSiteAByID(id uint) (*model.SiteA, error)
 	FindSiteAByDomain(domain string) (*model.SiteA, error)

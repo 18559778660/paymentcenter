@@ -15,6 +15,7 @@ var (
 	ErrChannelInterceptRangeInvalid = errors.New("channel intercept range invalid")
 	ErrChannelSuccessSettingInvalid   = errors.New("channel success setting invalid")
 	ErrChannelPlatformInvalid         = errors.New("channel platform invalid")
+	ErrChannelHasAccounts             = errors.New("channel has accounts")
 )
 
 // ChannelListItem 通道列表行，字段与前端 ChannelRow 对齐。
@@ -73,6 +74,7 @@ type ChannelListItem struct {
 	AutoShip          bool     `json:"autoShip"`
 	ReturnKeywords    string   `json:"returnKeywords"`
 	DisableBrandWords string   `json:"disableBrandWords"`
+	AccountCount      int      `json:"accountCount"`
 	CreatedBy         string   `json:"createdBy"`
 	CreatedAt         string   `json:"createdAt"`
 	UpdatedBy         string   `json:"updatedBy"`
@@ -161,7 +163,11 @@ func (a *App) ListChannels(q ChannelListQuery) ([]ChannelListItem, error) {
 	}
 	out := make([]ChannelListItem, 0, len(list))
 	for _, item := range list {
-		out = append(out, a.toChannelListItem(item, platformMap))
+		row, err := a.buildChannelListItem(item, platformMap)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, *row)
 	}
 	return out, nil
 }
@@ -232,7 +238,7 @@ func (a *App) CreateChannel(req CreateChannelRequest, operator string) (*Channel
 	if err := a.store.CreateChannel(item); err != nil {
 		return nil, err
 	}
-	return a.buildChannelListItem(*item)
+	return a.buildChannelListItem(*item, nil)
 }
 
 // UpdateChannel 编辑通道信息。
@@ -283,7 +289,7 @@ func (a *App) UpdateChannel(id uint, req UpdateChannelRequest, operator string) 
 	if err := a.store.SaveChannel(item); err != nil {
 		return nil, err
 	}
-	return a.buildChannelListItem(*item)
+	return a.buildChannelListItem(*item, nil)
 }
 
 // UpdateChannelLimits 更新限制配置。
@@ -326,7 +332,7 @@ func (a *App) UpdateChannelLimits(id uint, req UpdateChannelLimitsRequest, opera
 	if err := a.store.SaveChannel(item); err != nil {
 		return nil, err
 	}
-	return a.buildChannelListItem(*item)
+	return a.buildChannelListItem(*item, nil)
 }
 
 // SetChannelStatus 启用/禁用通道。
@@ -347,15 +353,46 @@ func (a *App) SetChannelStatus(id uint, enabled bool, operator string) (*Channel
 	if err := a.store.SaveChannel(item); err != nil {
 		return nil, err
 	}
-	return a.buildChannelListItem(*item)
+	return a.buildChannelListItem(*item, nil)
 }
 
-func (a *App) buildChannelListItem(item model.Channel) (*ChannelListItem, error) {
-	platformMap, err := a.loadPlatformMetaMap()
+// DeleteChannel 删除通道，仍有关联通道账号时不允许删除。
+func (a *App) DeleteChannel(id uint) error {
+	item, err := a.store.GetChannelByID(id)
+	if err != nil {
+		if isNotFound(err) {
+			return ErrChannelNotFound
+		}
+		return err
+	}
+	count, err := a.store.CountChannelAccountsByChannelID(id)
+	if err != nil {
+		return err
+	}
+	if count > 0 {
+		return ErrChannelHasAccounts
+	}
+	if err := a.store.DeleteChannel(id); err != nil {
+		return err
+	}
+	removeChannelPackageAssets(id, item.PackageName)
+	return nil
+}
+
+func (a *App) buildChannelListItem(item model.Channel, platformMap map[uint]model.Platform) (*ChannelListItem, error) {
+	if platformMap == nil {
+		var err error
+		platformMap, err = a.loadPlatformMetaMap()
+		if err != nil {
+			return nil, err
+		}
+	}
+	count, err := a.store.CountChannelAccountsByChannelID(item.ID)
 	if err != nil {
 		return nil, err
 	}
 	out := a.toChannelListItem(item, platformMap)
+	out.AccountCount = int(count)
 	return &out, nil
 }
 
