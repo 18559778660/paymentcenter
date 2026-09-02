@@ -2,7 +2,6 @@ package service
 
 import (
 	"errors"
-	"net/url"
 	"strings"
 
 	"paymentcenter/internal/model"
@@ -10,14 +9,14 @@ import (
 )
 
 var (
-	ErrChannelGroupNotFound             = errors.New("channel group not found")
-	ErrChannelGroupCodeExists           = errors.New("channel group code exists")
-	ErrChannelGroupNameExists           = errors.New("channel group name exists")
-	ErrChannelGroupCodeInvalid          = errors.New("channel group code invalid")
-	ErrChannelGroupNameInvalid          = errors.New("channel group name invalid")
+	ErrChannelGroupNotFound              = errors.New("channel group not found")
+	ErrChannelGroupCodeExists            = errors.New("channel group code exists")
+	ErrChannelGroupNameExists            = errors.New("channel group name exists")
+	ErrChannelGroupCodeInvalid           = errors.New("channel group code invalid")
+	ErrChannelGroupNameInvalid           = errors.New("channel group name invalid")
 	ErrChannelGroupInterceptRangeInvalid = errors.New("channel group intercept range invalid")
-	ErrChannelGroupSuccessSettingInvalid   = errors.New("channel group success setting invalid")
-	ErrChannelGroupMemberBound             = errors.New("channel group member bound")
+	ErrChannelGroupSuccessSettingInvalid = errors.New("channel group success setting invalid")
+	ErrChannelGroupMemberBound           = errors.New("channel group member bound")
 )
 
 // ChannelGroupListItem 通道分组列表行，字段与前端 ChannelGroupRow 对齐。
@@ -148,17 +147,17 @@ func (a *App) CreateChannelGroup(req CreateChannelGroupRequest, operator string)
 		return nil, err
 	}
 	item := &model.ChannelGroup{
-		Code:             code,
-		Name:             name,
-		TotalAmount:      0,
-		Balance:          0,
-		DailyRecvCount:   0,
-		DailyRecvAmount:  0,
-		Status:           model.ChannelGroupStatusEnabled,
-		CollectRule:      defaultString(req.CollectRule, "random"),
-		AutoShip:         req.AutoShip,
-		CreatedBy:        operator,
-		UpdatedBy:        operator,
+		Code:            code,
+		Name:            name,
+		TotalAmount:     0,
+		Balance:         0,
+		DailyRecvCount:  0,
+		DailyRecvAmount: 0,
+		Status:          model.ChannelGroupStatusEnabled,
+		CollectRule:     defaultString(req.CollectRule, "random"),
+		AutoShip:        req.AutoShip,
+		CreatedBy:       operator,
+		UpdatedBy:       operator,
 	}
 	applyChannelGroupLimits(item, channelGroupLimitsPayload{
 		OldCustomerDays:   req.OldCustomerDays,
@@ -333,15 +332,6 @@ func (a *App) SetChannelGroupAccountMembership(groupID, accountID uint, inGroup 
 	return a.store.RemoveChannelGroupMember(group.ID, account.ID)
 }
 
-// BuildGroupGatewayURL 生成分组网关地址。
-func (a *App) BuildGroupGatewayURL(groupCode string) string {
-	groupCode = strings.TrimSpace(groupCode)
-	if groupCode == "" || a.gatewayBaseURL == "" {
-		return ""
-	}
-	return a.gatewayBaseURL + "/api/gateway?group=" + url.QueryEscape(groupCode)
-}
-
 func (a *App) getChannelGroupItem(id uint) (*ChannelGroupListItem, error) {
 	item, err := a.store.GetChannelGroupByID(id)
 	if err != nil {
@@ -357,6 +347,7 @@ func (a *App) getChannelGroupItem(id uint) (*ChannelGroupListItem, error) {
 	return &row, nil
 }
 
+// toChannelGroupListItem 转换通道分组列表项。
 func (a *App) toChannelGroupListItem(item model.ChannelGroup) (ChannelGroupListItem, error) {
 	availableCount, err := a.store.CountEnabledChannelAccountsByGroupID(item.ID)
 	if err != nil {

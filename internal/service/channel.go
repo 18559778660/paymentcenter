@@ -9,13 +9,13 @@ import (
 )
 
 var (
-	ErrChannelNotFound             = errors.New("channel not found")
-	ErrChannelNameExists           = errors.New("channel name exists")
-	ErrChannelNameInvalid          = errors.New("channel name invalid")
+	ErrChannelNotFound              = errors.New("channel not found")
+	ErrChannelNameExists            = errors.New("channel name exists")
+	ErrChannelNameInvalid           = errors.New("channel name invalid")
 	ErrChannelInterceptRangeInvalid = errors.New("channel intercept range invalid")
-	ErrChannelSuccessSettingInvalid   = errors.New("channel success setting invalid")
-	ErrChannelPlatformInvalid         = errors.New("channel platform invalid")
-	ErrChannelHasAccounts             = errors.New("channel has accounts")
+	ErrChannelSuccessSettingInvalid = errors.New("channel success setting invalid")
+	ErrChannelPlatformInvalid       = errors.New("channel platform invalid")
+	ErrChannelHasAccounts           = errors.New("channel has accounts")
 )
 
 // ChannelListItem 通道列表行，字段与前端 ChannelRow 对齐。
@@ -396,6 +396,7 @@ func (a *App) buildChannelListItem(item model.Channel, platformMap map[uint]mode
 	return &out, nil
 }
 
+// toChannelListItem 转换通道列表项。
 func (a *App) toChannelListItem(item model.Channel, platformMap map[uint]model.Platform) ChannelListItem {
 	countries := []string(item.Countries)
 	if len(countries) == 0 {
