@@ -38,7 +38,8 @@ type ChannelAccount struct {
 	SuccessCountLimit int        `gorm:"column:success_count_limit;not null;default:0;comment:指定时间内限制成功次数" json:"success_count_limit"`
 	MaxSuccessCount   int        `gorm:"column:max_success_count;not null;default:0;comment:最多收款笔数" json:"max_success_count"`
 	Sort              int        `gorm:"column:sort;not null;default:0;comment:排序" json:"sort"`
-	AppID             string     `gorm:"column:app_id;type:varchar(512);not null;default:'';comment:应用ID/公钥" json:"app_id"`
+	AppID             string     `gorm:"column:app_id;type:varchar(512);not null;default:'';comment:应用ID" json:"app_id"`
+	PublicKey         string     `gorm:"column:public_key;type:varchar(512);not null;default:'';comment:公钥" json:"public_key"`
 	MerchantID        string     `gorm:"column:merchant_id;type:varchar(128);not null;default:'';comment:商户ID" json:"merchant_id"`
 	WebSecret         string     `gorm:"column:web_secret;type:varchar(512);not null;default:'';comment:web秘钥" json:"web_secret"`
 	PrivateKey        string     `gorm:"column:private_key;type:text;not null;comment:私钥" json:"private_key"`

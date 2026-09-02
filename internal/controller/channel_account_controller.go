@@ -191,7 +191,11 @@ func writeChannelAccountError(c *gin.Context, err error) {
 	case errors.Is(err, service.ErrChannelAccountGroupBound):
 		response.Fail(c, "该账号已绑定通道分组，无法删除")
 	case errors.Is(err, service.ErrChannelAccountAppIDMissing):
+		response.Fail(c, "请输入应用ID")
+	case errors.Is(err, service.ErrChannelAccountPublicKeyMissing):
 		response.Fail(c, "请输入公钥")
+	case errors.Is(err, service.ErrChannelPlatformInvalid):
+		response.Fail(c, "通道平台无效")
 	case errors.Is(err, service.ErrChannelAccountPrivateKeyMissing):
 		response.Fail(c, "请输入私钥")
 	case errors.Is(err, service.ErrChannelAccountWebSecretMissing):

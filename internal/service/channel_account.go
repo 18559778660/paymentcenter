@@ -17,6 +17,7 @@ var (
 	ErrChannelAccountSuccessSettingInvalid = errors.New("channel account success setting invalid")
 	ErrChannelAccountGroupBound            = errors.New("channel account group bound")
 	ErrChannelAccountAppIDMissing          = errors.New("channel account app id missing")
+	ErrChannelAccountPublicKeyMissing      = errors.New("channel account public key missing")
 	ErrChannelAccountPrivateKeyMissing     = errors.New("channel account private key missing")
 	ErrChannelAccountWebSecretMissing      = errors.New("channel account web secret missing")
 )
@@ -61,6 +62,7 @@ type ChannelAccountListItem struct {
 	SuccessMode       string   `json:"successMode"`
 	Sort              int      `json:"sort"`
 	AppID             string   `json:"appId"`
+	PublicKey         string   `json:"publicKey"`
 	MerchantID        string   `json:"merchantId"`
 	WebSecret         string   `json:"webSecret"`
 	PrivateKey        string   `json:"privateKey"`
@@ -106,6 +108,7 @@ type CreateChannelAccountRequest struct {
 	DisableCountries []string `json:"disableCountries"`
 	Sort             int      `json:"sort"`
 	AppID            string   `json:"appId"`
+	PublicKey        string   `json:"publicKey"`
 	WebSecret        string   `json:"webSecret"`
 	PrivateKey       string   `json:"privateKey"`
 	Remark           string   `json:"remark"`
@@ -119,6 +122,7 @@ type UpdateChannelAccountRequest struct {
 	SiteBID     uint   `json:"siteBId"`
 	Sort        int    `json:"sort"`
 	AppID       string `json:"appId"`
+	PublicKey   string `json:"publicKey"`
 	MerchantID  string `json:"merchantId"`
 	WebSecret   string `json:"webSecret"`
 	PrivateKey  string `json:"privateKey"`
@@ -233,7 +237,7 @@ func (a *App) CreateChannelAccount(req CreateChannelAccountRequest, operator str
 	} else if err != nil && !isNotFound(err) {
 		return nil, err
 	}
-	if err := validateChannelAccountCredentials(req.AppID, req.PrivateKey, req.WebSecret); err != nil {
+	if err := a.validateChannelAccountCredentialsForPlatform(req.ChannelID, req.AppID, req.PublicKey, req.PrivateKey, req.WebSecret); err != nil {
 		return nil, err
 	}
 	status := model.ChannelAccountStatusEnabled
@@ -268,6 +272,7 @@ func (a *App) CreateChannelAccount(req CreateChannelAccountRequest, operator str
 		DisableCountries:  model.StringList(req.DisableCountries),
 		Sort:              req.Sort,
 		AppID:             strings.TrimSpace(req.AppID),
+		PublicKey:         strings.TrimSpace(req.PublicKey),
 		WebSecret:         strings.TrimSpace(req.WebSecret),
 		PrivateKey:        req.PrivateKey,
 		PaymentMethod:     "card",
@@ -322,6 +327,7 @@ func (a *App) UpdateChannelAccount(id uint, req UpdateChannelAccountRequest, ope
 	item.SiteBID = req.SiteBID
 	item.Sort = req.Sort
 	item.AppID = strings.TrimSpace(req.AppID)
+	item.PublicKey = strings.TrimSpace(req.PublicKey)
 	item.MerchantID = strings.TrimSpace(req.MerchantID)
 	item.WebSecret = strings.TrimSpace(req.WebSecret)
 	item.PrivateKey = req.PrivateKey
@@ -558,6 +564,7 @@ func toChannelAccountListItem(item model.ChannelAccount, channelMap map[uint]str
 		SuccessMode:       resolveAccountSuccessMode(item.PayFrequency, item.SuccessCountLimit),
 		Sort:              item.Sort,
 		AppID:             item.AppID,
+		PublicKey:         item.PublicKey,
 		MerchantID:        item.MerchantID,
 		WebSecret:         item.WebSecret,
 		PrivateKey:        item.PrivateKey,
@@ -591,15 +598,35 @@ func validateAccountSuccessSetting(payFrequency, successCountLimit int) error {
 	return nil
 }
 
-func validateChannelAccountCredentials(appID, privateKey, webSecret string) error {
-	if strings.TrimSpace(appID) == "" {
-		return ErrChannelAccountAppIDMissing
-	}
+func (a *App) validateChannelAccountCredentialsForPlatform(channelID uint, appID, publicKey, privateKey, webSecret string) error {
 	if strings.TrimSpace(privateKey) == "" {
 		return ErrChannelAccountPrivateKeyMissing
 	}
 	if strings.TrimSpace(webSecret) == "" {
 		return ErrChannelAccountWebSecretMissing
+	}
+	channel, err := a.store.GetChannelByID(channelID)
+	if err != nil {
+		if isNotFound(err) {
+			return ErrChannelAccountChannelInvalid
+		}
+		return err
+	}
+	platform, err := a.getPlatformByID(channel.PlatformID)
+	if err != nil {
+		return err
+	}
+	switch platform.Code {
+	case model.PlatformCodeStripe:
+		if strings.TrimSpace(publicKey) == "" {
+			return ErrChannelAccountPublicKeyMissing
+		}
+	case model.PlatformCodePaypal:
+		if strings.TrimSpace(appID) == "" {
+			return ErrChannelAccountAppIDMissing
+		}
+	default:
+		return ErrChannelPlatformInvalid
 	}
 	return nil
 }
