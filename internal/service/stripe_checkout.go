@@ -16,7 +16,8 @@ type stripeCheckoutInput struct {
 	Amount        int64
 	Currency      string
 	Subject       string
-	ReturnURL     string
+	ResultURL     string
+	CancelURL     string
 }
 
 // stripeCheckoutResult Stripe Checkout 输出结果。
@@ -42,23 +43,21 @@ func createStripeCheckoutSession(in stripeCheckoutInput) (*stripeCheckoutResult,
 	if subject == "" {
 		subject = "Order " + in.MerchantOrder
 	}
-	returnURL := strings.TrimSpace(in.ReturnURL)
-	if returnURL == "" {
-		return nil, fmt.Errorf("return_url required")
+	resultURL := strings.TrimSpace(in.ResultURL)
+	if resultURL == "" {
+		return nil, fmt.Errorf("result_url required")
 	}
-	successURL := returnURL
-	if strings.Contains(successURL, "?") {
-		successURL += "&order_id=" + in.OrderID
-	} else {
-		successURL += "?order_id=" + in.OrderID
+	cancelURL := strings.TrimSpace(in.CancelURL)
+	if cancelURL == "" {
+		return nil, fmt.Errorf("cancel_url required")
 	}
 
 	stripe.Key = secretKey
 	params := &stripe.CheckoutSessionParams{
 		Mode:              stripe.String(string(stripe.CheckoutSessionModePayment)),
 		ClientReferenceID: stripe.String(in.OrderID),
-		SuccessURL:        stripe.String(successURL),
-		CancelURL:         stripe.String(returnURL),
+		SuccessURL:        stripe.String(resultURL),
+		CancelURL:         stripe.String(cancelURL),
 		LineItems: []*stripe.CheckoutSessionLineItemParams{
 			{
 				Quantity: stripe.Int64(1),

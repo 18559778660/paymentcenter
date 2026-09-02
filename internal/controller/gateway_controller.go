@@ -30,23 +30,32 @@ func (g *GatewayController) Access(c *gin.Context) {
 	response.SuccessMsg(c, data, "gateway ready")
 }
 
-// Pay A 站发起支付。URL 带 channel 或 group，Body 传订单信息，Header 或 Body 传商户密钥。
+// Pay A 站发起支付。URL 带 channel 或 group，Body 传 Shopyy 订单参数，Header 传 Api-Token。
 func (g *GatewayController) Pay(c *gin.Context) {
-	var req service.GatewayPayRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Fail(c, "参数错误")
+	payload, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		response.ShopyyPayFail(c, "读取请求失败")
 		return
 	}
-	secretKey := c.GetHeader("X-Merchant-Secret")
+	req, err := service.NormalizeGatewayPayRequest(payload)
+	if err != nil {
+		if errors.Is(err, service.ErrGatewayParamInvalid) {
+			response.ShopyyPayFail(c, "参数错误")
+			return
+		}
+		response.ShopyyPayFail(c, err.Error())
+		return
+	}
+	secretKey := c.GetHeader("Api-Token")
 	res, err := g.app.GatewayPay(req, service.GatewayPayQuery{
 		Channel: c.Query("channel"),
 		Group:   c.Query("group"),
 	}, secretKey)
 	if err != nil {
-		writeGatewayPayError(c, err)
+		writeShopyyPayError(c, err)
 		return
 	}
-	response.SuccessMsg(c, res, "created")
+	response.ShopyyPaySuccess(c, res.CheckoutURL, req.SiteMode)
 }
 
 // StripeWebhook Stripe 支付结果回调。
@@ -64,28 +73,27 @@ func (g *GatewayController) StripeWebhook(c *gin.Context) {
 	response.SuccessMsg(c, nil, "ok")
 }
 
-// writeGatewayPayError 写入网关支付错误。
-func writeGatewayPayError(c *gin.Context, err error) {
+func writeShopyyPayError(c *gin.Context, err error) {
 	switch {
 	case errors.Is(err, service.ErrGatewayMerchantInvalid):
-		response.Fail(c, "商户密钥无效")
+		response.ShopyyPayFail(c, "商户密钥无效")
 	case errors.Is(err, service.ErrGatewaySiteInvalid):
-		response.Fail(c, "A站未审核或不属于该商户")
+		response.ShopyyPayFail(c, "A站未审核或不属于该商户")
 	case errors.Is(err, service.ErrGatewayRouteInvalid):
-		response.Fail(c, "网关路由无效，请检查 channel 或 group 参数")
+		response.ShopyyPayFail(c, "网关路由无效，请检查 channel 或 group 参数")
 	case errors.Is(err, service.ErrGatewayChannelDisabled):
-		response.Fail(c, "通道已禁用")
+		response.ShopyyPayFail(c, "通道已禁用")
 	case errors.Is(err, service.ErrGatewayAccountUnavailable):
-		response.Fail(c, "暂无可用通道账号")
+		response.ShopyyPayFail(c, "暂无可用通道账号")
 	case errors.Is(err, service.ErrGatewayAccountStripeKeyMissing):
-		response.Fail(c, "通道账号未配置 Stripe 私钥")
+		response.ShopyyPayFail(c, "通道账号未配置 Stripe 私钥")
 	case errors.Is(err, service.ErrGatewayAccountWebhookSecretMissing):
-		response.Fail(c, "通道账号未配置 Webhook 密钥")
+		response.ShopyyPayFail(c, "通道账号未配置 Webhook 密钥")
 	case errors.Is(err, service.ErrGatewayPlatformUnsupported):
-		response.Fail(c, "当前仅支持 Stripe 直连")
+		response.ShopyyPayFail(c, "当前仅支持 Stripe 直连")
 	case errors.Is(err, service.ErrGatewayStripeFailed):
-		response.Fail(c, err.Error())
+		response.ShopyyPayFail(c, err.Error())
 	default:
-		response.Fail(c, err.Error())
+		response.ShopyyPayFail(c, err.Error())
 	}
 }

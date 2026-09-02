@@ -22,16 +22,18 @@ var (
 	ErrGatewayAccountWebhookSecretMissing = errors.New("gateway account webhook secret missing")
 )
 
-// GatewayPayRequest A 站经网关发起支付。
+// GatewayPayRequest 网关支付内部订单字段（由 A 站入参映射而来）。
 type GatewayPayRequest struct {
-	MerchantOrder string `json:"merchant_order" binding:"required"`
-	MerchantSite  string `json:"merchant_site" binding:"required"`
-	Amount        int64  `json:"amount" binding:"required"`
-	Currency      string `json:"currency" binding:"required"`
-	ReturnURL     string `json:"return_url" binding:"required"`
-	NotifyURL     string `json:"notify_url" binding:"required"`
-	Subject       string `json:"subject"`
-	SecretKey     string `json:"secret_key"`
+	MerchantOrder string
+	MerchantSite  string
+	Amount        int64
+	Currency      string
+	ReturnURL     string
+	NotifyURL     string
+	CancelURL     string
+	ResultURL     string
+	Subject       string
+	SiteMode      string
 }
 
 // GatewayPayQuery 网关路由参数。
@@ -42,7 +44,10 @@ type GatewayPayQuery struct {
 
 // GatewayPay A 站经网关创建支付并落库订单，按通道所属平台分发。
 func (a *App) GatewayPay(req GatewayPayRequest, q GatewayPayQuery, secretKey string) (CreateOrderResponse, error) {
-	secretKey = firstNonEmpty(strings.TrimSpace(secretKey), strings.TrimSpace(req.SecretKey))
+	secretKey = strings.TrimSpace(secretKey)
+	if secretKey == "" {
+		return CreateOrderResponse{}, ErrGatewayMerchantInvalid
+	}
 	merchant, err := a.validateGatewayMerchant(secretKey)
 	if err != nil {
 		return CreateOrderResponse{}, err
@@ -85,7 +90,7 @@ func (a *App) GatewayPay(req GatewayPayRequest, q GatewayPayQuery, secretKey str
 		return CreateOrderResponse{}, err
 	}
 
-	checkoutURL, providerRef, err := a.createGatewayCheckout(platform, account, order, req.Subject)
+	checkoutURL, providerRef, err := a.createGatewayCheckout(platform, account, order, req.Subject, req.ResultURL, req.CancelURL)
 	if err != nil {
 		order.Status = model.OrderStatusFailed
 		order.ErrorMessage = err.Error()
