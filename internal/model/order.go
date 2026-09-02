@@ -18,6 +18,7 @@ type Order struct {
 	ID            string      `gorm:"column:id;type:varchar(64);primaryKey" json:"id"`                        // 支付中心订单号
 	MerchantOrder string      `gorm:"column:merchant_order;type:varchar(128);not null;index" json:"merchant_order"` // A站订单号
 	MerchantSite     string      `gorm:"column:merchant_site;type:varchar(255);not null" json:"merchant_site"`   // A站站点标识
+	MerchantID       uint        `gorm:"column:merchant_id;not null;default:0;index" json:"merchant_id"`         // 商户ID
 	Channel          string      `gorm:"column:channel;type:varchar(64);not null" json:"channel"`                // 通道代码
 	ChannelAccountID uint        `gorm:"column:channel_account_id;not null;default:0;index" json:"channel_account_id"` // 通道账号ID
 	Provider         string      `gorm:"column:provider;type:varchar(64);not null" json:"provider"`              // 支付平台，例如 stripe
@@ -25,6 +26,7 @@ type Order struct {
 	Currency      string      `gorm:"column:currency;type:varchar(16);not null" json:"currency"`              // 币种
 	ReturnURL     string      `gorm:"column:return_url;type:text;not null" json:"return_url"`                 // 同步返回地址
 	NotifyURL     string      `gorm:"column:notify_url;type:text;not null" json:"notify_url"`                 // 异步通知地址
+	NotifyVerify  string      `gorm:"column:notify_verify;type:text" json:"notify_verify,omitempty"`          // Shopyy 异步 verify 快照 JSON
 	CheckoutURL   string      `gorm:"column:checkout_url;type:text" json:"checkout_url,omitempty"`            // 支付跳转地址
 	ProviderRef   string      `gorm:"column:provider_ref;type:varchar(128);not null;default:''" json:"provider_ref,omitempty"` // 支付平台交易号
 	Status        OrderStatus `gorm:"column:status;type:varchar(32);not null;index" json:"status"`            // 订单状态

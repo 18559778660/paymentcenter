@@ -34,11 +34,29 @@ func (a *App) notifyMerchantSite(order *model.Order) error {
 		return nil
 	}
 
+	secret, err := a.merchantSecretForOrder(order)
+	if err != nil {
+		return err
+	}
+	snapshot, err := decodeShopyyNotifyVerifySnapshot(order.NotifyVerify)
+	if err != nil {
+		return err
+	}
+	serialNo := strings.TrimSpace(order.ProviderRef)
+	if serialNo == "" {
+		serialNo = order.ID
+	}
+	verify, err := encodeShopyyNotifyVerify(snapshot, serialNo, secret)
+	if err != nil {
+		return err
+	}
+
 	orderStatus, payMsg := shopyyNotifyPayload(order)
 	form := url.Values{}
 	form.Set("order_status", fmt.Sprintf("%d", orderStatus))
 	form.Set("pay_msg", payMsg)
-	form.Set("resourcesSaleId", strings.TrimSpace(order.ProviderRef))
+	form.Set("resourcesSaleId", serialNo)
+	form.Set("verify", verify)
 	log.Printf(
 		"shopyy notify request order_id=%s merchant_order=%s url=%s body=%s",
 		order.ID,
@@ -78,6 +96,34 @@ func (a *App) notifyMerchantSite(order *model.Order) error {
 		return err
 	}
 	return nil
+}
+
+// merchantSecretForOrder 获取订单所属商户密钥。
+func (a *App) merchantSecretForOrder(order *model.Order) (string, error) {
+	if order.MerchantID > 0 {
+		merchant, err := a.store.GetMerchantByID(order.MerchantID)
+		if err != nil {
+			return "", err
+		}
+		secret := strings.TrimSpace(merchant.SecretKey)
+		if secret == "" {
+			return "", fmt.Errorf("merchant secret missing")
+		}
+		return secret, nil
+	}
+	site, err := a.store.FindSiteAByDomain(order.MerchantSite)
+	if err != nil {
+		return "", fmt.Errorf("merchant secret missing")
+	}
+	merchant, err := a.store.GetMerchantByID(site.MerchantID)
+	if err != nil {
+		return "", err
+	}
+	secret := strings.TrimSpace(merchant.SecretKey)
+	if secret == "" {
+		return "", fmt.Errorf("merchant secret missing")
+	}
+	return secret, nil
 }
 
 // shopyyNotifyPayload 转换 Shopyy 通知支付状态。

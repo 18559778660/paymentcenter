@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"encoding/json"
 	"strconv"
 	"strings"
 	"time"
@@ -34,6 +35,7 @@ type GatewayPayRequest struct {
 	ResultURL     string
 	Subject       string
 	SiteMode      string
+	ShopyyVerify  ShopyyNotifyVerifySnapshot
 }
 
 // GatewayPayQuery 网关路由参数。
@@ -71,10 +73,15 @@ func (a *App) GatewayPay(req GatewayPayRequest, q GatewayPayQuery, secretKey str
 
 	now := time.Now().UTC()
 	orderID := "pc_" + strconv.FormatInt(now.UnixNano(), 10)
+	verifyJSON, err := json.Marshal(req.ShopyyVerify)
+	if err != nil {
+		return CreateOrderResponse{}, err
+	}
 	order := &model.Order{
 		ID:               orderID,
 		MerchantOrder:    strings.TrimSpace(req.MerchantOrder),
 		MerchantSite:     siteDomain,
+		MerchantID:       merchant.ID,
 		Channel:          channel.Name,
 		ChannelAccountID: account.ID,
 		Provider:         platform.Code,
@@ -82,6 +89,7 @@ func (a *App) GatewayPay(req GatewayPayRequest, q GatewayPayQuery, secretKey str
 		Currency:         strings.ToLower(strings.TrimSpace(req.Currency)),
 		ReturnURL:        strings.TrimSpace(req.ReturnURL),
 		NotifyURL:        strings.TrimSpace(req.NotifyURL),
+		NotifyVerify:     string(verifyJSON),
 		Status:           model.OrderStatusCreated,
 		CreatedAt:        now,
 		UpdatedAt:        now,

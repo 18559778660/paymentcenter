@@ -21,6 +21,9 @@ type gatewayPayPayload struct {
 	CancelURL   string          `json:"cancel_url"`
 	ResultURL   string          `json:"result_url"`
 	Domain      string          `json:"domain"`
+	OrderTime   string          `json:"order_time"`
+	Email       string          `json:"email"`
+	CustomerIp  string          `json:"customerIp"`
 	FrameType   string          `json:"frame_type"`
 	SiteMode    string          `json:"site_mode"`
 	OrderGoods  []struct {
@@ -67,6 +70,18 @@ func NormalizeGatewayPayRequest(payload []byte) (GatewayPayRequest, error) {
 	amountMajor, err := parseGatewayAmountMajor(raw.Amount)
 	if err != nil {
 		return GatewayPayRequest{}, fmt.Errorf("%w: %v", ErrGatewayParamInvalid, err)
+	}
+	payAmount := formatShopyyPayAmount(amountMajor)
+	payCurrency := strings.ToUpper(strings.TrimSpace(raw.Currency))
+	req.ShopyyVerify = ShopyyNotifyVerifySnapshot{
+		OrderNumber:  req.MerchantOrder,
+		PayUSDAmount: payAmount,
+		PayCurrency:  payCurrency,
+		PayAmount:    payAmount,
+		OrderTime:    strings.TrimSpace(raw.OrderTime),
+		Domain:       req.MerchantSite,
+		Email:        strings.TrimSpace(raw.Email),
+		CustomerIP:   strings.TrimSpace(raw.CustomerIp),
 	}
 	req.Amount, err = majorAmountToStripeMinor(amountMajor, req.Currency)
 	if err != nil {
