@@ -48,8 +48,8 @@ func NormalizeGatewayPayRequest(payload []byte) (GatewayPayRequest, error) {
 	if len(payload) == 0 {
 		return GatewayPayRequest{}, fmt.Errorf("%w: empty body", ErrGatewayParamInvalid)
 	}
-	var raw gatewayPayPayload
-	if err := json.Unmarshal(payload, &raw); err != nil {
+	raw, err := parseGatewayPayPayload(payload)
+	if err != nil {
 		return GatewayPayRequest{}, fmt.Errorf("%w: invalid json", ErrGatewayParamInvalid)
 	}
 
@@ -91,6 +91,26 @@ func NormalizeGatewayPayRequest(payload []byte) (GatewayPayRequest, error) {
 		return GatewayPayRequest{}, err
 	}
 	return req, nil
+}
+
+// parseGatewayPayPayload 解析 Shopyy 支付 body：{"order":"{...json...}"}。
+func parseGatewayPayPayload(payload []byte) (gatewayPayPayload, error) {
+	var wrapper struct {
+		Order string `json:"order"`
+	}
+	if err := json.Unmarshal(payload, &wrapper); err != nil {
+		return gatewayPayPayload{}, err
+	}
+	orderJSON := strings.TrimSpace(wrapper.Order)
+	if orderJSON == "" {
+		return gatewayPayPayload{}, errors.New("missing order")
+	}
+
+	var raw gatewayPayPayload
+	if err := json.Unmarshal([]byte(orderJSON), &raw); err != nil {
+		return gatewayPayPayload{}, err
+	}
+	return raw, nil
 }
 
 // majorAmountToStripeMinor A 站主货币单位转 Stripe 最小单位。
