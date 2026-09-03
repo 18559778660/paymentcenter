@@ -7,19 +7,27 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
 	"paymentcenter/internal/model"
 )
 
-// shopyyNotifyCodeOK Shopyy 通知响应码：成功。
 const (
 	shopyyOrderStatusPaid   = 3
 	shopyyOrderStatusFailed = 4
 	shopyyNotifyCodeOK      = 1
 )
+
+// shopyyAsyncNotifyRequest Shopyy 异步回调请求体。
+type shopyyAsyncNotifyRequest struct {
+	OrderNumber string   `json:"order_number"`
+	OrderStatus string   `json:"order_status"`
+	PayType     *string  `json:"pay_type,omitempty"`
+	Remark      string   `json:"remark"`
+	Verify      []string `json:"verify,omitempty"`
+}
 
 // shopyyNotifyResponse Shopyy 通知响应。
 type shopyyNotifyResponse struct {
@@ -38,6 +46,7 @@ func (a *App) notifyMerchantSite(order *model.Order) error {
 	if err != nil {
 		return err
 	}
+	// 解码 Shopyy 通知 verify 快照。
 	snapshot, err := decodeShopyyNotifyVerifySnapshot(order.NotifyVerify)
 	if err != nil {
 		return err
@@ -51,25 +60,29 @@ func (a *App) notifyMerchantSite(order *model.Order) error {
 		return err
 	}
 
-	orderStatus, payMsg := shopyyNotifyPayload(order)
-	form := url.Values{}
-	form.Set("order_status", fmt.Sprintf("%d", orderStatus))
-	form.Set("pay_msg", payMsg)
-	form.Set("resourcesSaleId", serialNo)
-	form.Set("verify", verify)
+	orderStatus, remark := shopyyNotifyPayload(order)
+	body, err := json.Marshal(shopyyAsyncNotifyRequest{
+		OrderNumber: strings.TrimSpace(order.MerchantOrder),
+		OrderStatus: orderStatus,
+		Remark:      remark,
+		Verify:      []string{verify},
+	})
+	if err != nil {
+		return err
+	}
 	log.Printf(
 		"shopyy notify request order_id=%s merchant_order=%s url=%s body=%s",
 		order.ID,
 		order.MerchantOrder,
 		notifyURL,
-		form.Encode(),
+		truncateNotifyBody(body),
 	)
 
-	req, err := http.NewRequest(http.MethodPost, notifyURL, strings.NewReader(form.Encode()))
+	req, err := http.NewRequest(http.MethodPost, notifyURL, bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{Timeout: 15 * time.Second}
 	resp, err := client.Do(req)
@@ -126,17 +139,17 @@ func (a *App) merchantSecretForOrder(order *model.Order) (string, error) {
 	return secret, nil
 }
 
-// shopyyNotifyPayload 转换 Shopyy 通知支付状态。
-func shopyyNotifyPayload(order *model.Order) (orderStatus int, payMsg string) {
+// shopyyNotifyPayload 转换 Shopyy 异步通知状态与备注。
+func shopyyNotifyPayload(order *model.Order) (orderStatus, remark string) {
 	switch order.Status {
 	case model.OrderStatusPaid:
-		return shopyyOrderStatusPaid, "Success"
+		return strconv.Itoa(shopyyOrderStatusPaid), ""
 	default:
 		msg := strings.TrimSpace(order.ErrorMessage)
 		if msg == "" {
 			msg = "Payment failed"
 		}
-		return shopyyOrderStatusFailed, msg
+		return strconv.Itoa(shopyyOrderStatusFailed), msg
 	}
 }
 

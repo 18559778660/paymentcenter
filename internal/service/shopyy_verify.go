@@ -19,26 +19,13 @@ type ShopyyNotifyVerifySnapshot struct {
 	CustomerIP   string `json:"customerIp"`
 }
 
-type shopyyVerifyPayload struct {
-	OrderNumber  string `json:"orderNumber"`
-	PayUSDAmount string `json:"pay_usd_amount"`
-	PayCurrency  string `json:"pay_currency"`
-	PayAmount    string `json:"pay_amount"`
-	OrderTime    string `json:"order_time"`
-	Domain       string `json:"domain"`
-	Email        string `json:"email"`
-	CustomerIP   string `json:"customerIp"`
-	SerialNo     string `json:"serial_no"`
-	Signature    string `json:"signature"`
-}
-
 func formatShopyyPayAmount(amount float64) string {
 	return fmt.Sprintf("%.2f", amount)
 }
 
+// encodeShopyyNotifyVerify 编码 Shopyy 通知 verify 字段。
 func encodeShopyyNotifyVerify(snapshot ShopyyNotifyVerifySnapshot, serialNo, secret string) (string, error) {
-	serialNo = strings.TrimSpace(serialNo)
-	signParams := map[string]string{
+	verify := map[string]string{
 		"orderNumber":    strings.TrimSpace(snapshot.OrderNumber),
 		"pay_usd_amount": strings.TrimSpace(snapshot.PayUSDAmount),
 		"pay_currency":   strings.TrimSpace(snapshot.PayCurrency),
@@ -47,28 +34,18 @@ func encodeShopyyNotifyVerify(snapshot ShopyyNotifyVerifySnapshot, serialNo, sec
 		"domain":         strings.TrimSpace(snapshot.Domain),
 		"email":          strings.TrimSpace(snapshot.Email),
 		"customerIp":     strings.TrimSpace(snapshot.CustomerIP),
-		"serial_no":      serialNo,
+		"serial_no":      strings.TrimSpace(serialNo),
 	}
-	payload := shopyyVerifyPayload{
-		OrderNumber:  signParams["orderNumber"],
-		PayUSDAmount: signParams["pay_usd_amount"],
-		PayCurrency:  signParams["pay_currency"],
-		PayAmount:    signParams["pay_amount"],
-		OrderTime:    signParams["order_time"],
-		Domain:       signParams["domain"],
-		Email:        signParams["email"],
-		CustomerIP:   signParams["customerIp"],
-		SerialNo:     serialNo,
-	}
-	payload.Signature = shopyyGetSign(signParams, secret)
+	verify["signature"] = shopyyGetSign(verify, secret)
 
-	raw, err := json.Marshal(payload)
+	raw, err := json.Marshal(verify)
 	if err != nil {
 		return "", err
 	}
 	return base64.StdEncoding.EncodeToString(raw), nil
 }
 
+// decodeShopyyNotifyVerifySnapshot 解码 Shopyy 通知 verify 快照。
 func decodeShopyyNotifyVerifySnapshot(raw string) (ShopyyNotifyVerifySnapshot, error) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
