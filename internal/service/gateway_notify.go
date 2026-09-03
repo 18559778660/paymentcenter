@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -70,13 +69,6 @@ func (a *App) notifyMerchantSite(order *model.Order) error {
 	if err != nil {
 		return err
 	}
-	log.Printf(
-		"shopyy notify request order_id=%s merchant_order=%s url=%s body=%s",
-		order.ID,
-		order.MerchantOrder,
-		notifyURL,
-		truncateNotifyBody(body),
-	)
 
 	req, err := http.NewRequest(http.MethodPost, notifyURL, bytes.NewReader(body))
 	if err != nil {
@@ -95,13 +87,6 @@ func (a *App) notifyMerchantSite(order *model.Order) error {
 	if err != nil {
 		return err
 	}
-	log.Printf(
-		"shopyy notify response order_id=%s merchant_order=%s status=%d body=%s",
-		order.ID,
-		order.MerchantOrder,
-		resp.StatusCode,
-		truncateNotifyBody(respBody),
-	)
 	if resp.StatusCode >= 400 {
 		return fmt.Errorf("shopyy notify failed: status %d body %s", resp.StatusCode, truncateNotifyBody(respBody))
 	}

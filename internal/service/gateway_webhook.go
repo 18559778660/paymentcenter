@@ -75,7 +75,11 @@ func (a *App) HandleStripeWebhook(payload []byte, signature string) error {
 	if err != nil {
 		return err
 	}
-	event, err := webhook.ConstructEvent(payload, signature, webhookSecret)
+
+	// Webhook endpoint 的 API 版本可能与 stripe-go 不一致，验签后自行解析所需字段即可。
+	event, err := webhook.ConstructEventWithOptions(payload, signature, webhookSecret, webhook.ConstructEventOptions{
+		IgnoreAPIVersionMismatch: true,
+	})
 	if err != nil {
 		return err
 	}

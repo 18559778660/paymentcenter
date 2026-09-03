@@ -3,8 +3,6 @@ package controller
 import (
 	"errors"
 	"io"
-	"log"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -39,13 +37,6 @@ func (g *GatewayController) Pay(c *gin.Context) {
 		response.ShopyyPayFail(c, "读取请求失败")
 		return
 	}
-	log.Printf(
-		"shopyy pay request channel=%s group=%s api_token_set=%t body=%s",
-		c.Query("channel"),
-		c.Query("group"),
-		strings.TrimSpace(c.GetHeader("Api-Token")) != "",
-		string(payload),
-	)
 	req, err := service.NormalizeGatewayPayRequest(payload)
 	if err != nil {
 		if errors.Is(err, service.ErrGatewayParamInvalid) {
