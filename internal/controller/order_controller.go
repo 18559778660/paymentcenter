@@ -24,7 +24,7 @@ func (o *OrderController) List(c *gin.Context) {
 		response.Fail(c, err.Error())
 		return
 	}
-	response.Success(c, gin.H{"items": orders})
+	response.Success(c, orders)
 }
 
 // Get 按订单号查询单笔订单。

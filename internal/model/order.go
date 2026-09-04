@@ -21,6 +21,8 @@ type Order struct {
 	MerchantID       uint        `gorm:"column:merchant_id;not null;default:0;index" json:"merchant_id"`         // 商户ID
 	Channel          string      `gorm:"column:channel;type:varchar(64);not null" json:"channel"`                // 通道代码
 	ChannelAccountID uint        `gorm:"column:channel_account_id;not null;default:0;index" json:"channel_account_id"` // 通道账号ID
+	SiteBID          uint        `gorm:"column:site_b_id;not null;default:0;index" json:"site_b_id"`             // B站ID（下单时快照）
+	SiteB            string      `gorm:"column:site_b;type:varchar(191);not null;default:''" json:"site_b"`      // B站域名（下单时快照）
 	Provider         string      `gorm:"column:provider;type:varchar(64);not null" json:"provider"`              // 支付平台，例如 stripe
 	Amount        int64       `gorm:"column:amount;not null" json:"amount"`                                   // 金额，最小货币单位
 	Currency      string      `gorm:"column:currency;type:varchar(16);not null" json:"currency"`              // 币种

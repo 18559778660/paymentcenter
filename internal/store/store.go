@@ -923,6 +923,16 @@ func (s *MySQLStore) GetSiteBByID(id uint) (*model.SiteB, error) {
 	return &item, nil
 }
 
+// GetSiteBsByIDs 按主键批量查 B 站。
+func (s *MySQLStore) GetSiteBsByIDs(ids []uint) ([]model.SiteB, error) {
+	if len(ids) == 0 {
+		return []model.SiteB{}, nil
+	}
+	var list []model.SiteB
+	err := s.db.Where("id IN ?", ids).Find(&list).Error
+	return list, err
+}
+
 // FindSiteBByDomain 按域名查 B 站。
 func (s *MySQLStore) FindSiteBByDomain(domain string) (*model.SiteB, error) {
 	var item model.SiteB
@@ -1080,6 +1090,16 @@ func (s *MySQLStore) GetChannelAccountByID(id uint) (*model.ChannelAccount, erro
 		return nil, ErrNotFound
 	}
 	return &item, nil
+}
+
+// GetChannelAccountsByIDs 按主键批量查通道账号。
+func (s *MySQLStore) GetChannelAccountsByIDs(ids []uint) ([]model.ChannelAccount, error) {
+	if len(ids) == 0 {
+		return []model.ChannelAccount{}, nil
+	}
+	var list []model.ChannelAccount
+	err := s.db.Where("id IN ?", ids).Find(&list).Error
+	return list, err
 }
 
 // FindChannelAccountByChannelAndSiteB 按通道和 B 站查询。

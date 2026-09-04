@@ -77,6 +77,15 @@ func (a *App) GatewayPay(req GatewayPayRequest, q GatewayPayQuery, secretKey str
 	if err != nil {
 		return CreateOrderResponse{}, err
 	}
+	siteBID := account.SiteBID
+	siteBDomain := ""
+	if siteBID > 0 {
+		if siteB, siteErr := a.store.GetSiteBByID(siteBID); siteErr == nil && siteB != nil {
+			siteBDomain = strings.TrimSpace(siteB.Domain)
+		} else if siteErr != nil && !isNotFound(siteErr) {
+			return CreateOrderResponse{}, siteErr
+		}
+	}
 	order := &model.Order{
 		ID:               orderID,
 		MerchantOrder:    strings.TrimSpace(req.MerchantOrder),
@@ -84,6 +93,8 @@ func (a *App) GatewayPay(req GatewayPayRequest, q GatewayPayQuery, secretKey str
 		MerchantID:       merchant.ID,
 		Channel:          channel.Name,
 		ChannelAccountID: account.ID,
+		SiteBID:          siteBID,
+		SiteB:            siteBDomain,
 		Provider:         platform.Code,
 		Amount:           req.Amount,
 		Currency:         strings.ToLower(strings.TrimSpace(req.Currency)),

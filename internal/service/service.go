@@ -89,6 +89,7 @@ type Store interface {
 	CreateSiteB(item *model.SiteB) error
 	SaveSiteB(item *model.SiteB) error
 	GetSiteBByID(id uint) (*model.SiteB, error)
+	GetSiteBsByIDs(ids []uint) ([]model.SiteB, error)
 	FindSiteBByDomain(domain string) (*model.SiteB, error)
 	ListSiteBs(filter store.SiteBListFilter) ([]model.SiteB, error)
 	CreatePlatform(item *model.Platform) error
@@ -98,6 +99,7 @@ type Store interface {
 	CreateChannelAccount(item *model.ChannelAccount) error
 	SaveChannelAccount(item *model.ChannelAccount) error
 	GetChannelAccountByID(id uint) (*model.ChannelAccount, error)
+	GetChannelAccountsByIDs(ids []uint) ([]model.ChannelAccount, error)
 	FindChannelAccountByChannelAndSiteB(channelID, siteBID uint) (*model.ChannelAccount, error)
 	ListChannelAccounts(filter store.ChannelAccountListFilter) ([]model.ChannelAccount, error)
 	DeleteChannelAccount(id uint) error
