@@ -147,6 +147,36 @@
     ]
   },
   {
+    "name": "Trade",
+    "title": "交易管理",
+    "path": "/trade",
+    "icon": "lucide:chart-column",
+    "type": 0,
+    "sort": 60,
+    "children": [
+      {
+        "name": "TradeOrderList",
+        "title": "订单列表",
+        "path": "/trade/order",
+        "component": "/trade/order/index",
+        "icon": "lucide:list-ordered",
+        "authCode": "trade:order",
+        "type": 1,
+        "sort": 1
+      },
+      {
+        "name": "TradeOrderLog",
+        "title": "订单日志",
+        "path": "/trade/order-log",
+        "component": "/trade/order-log/index",
+        "icon": "lucide:file-clock",
+        "authCode": "trade:orderLog",
+        "type": 1,
+        "sort": 2
+      }
+    ]
+  },
+  {
     "name": "Site",
     "title": "站点管理",
     "path": "/site",
