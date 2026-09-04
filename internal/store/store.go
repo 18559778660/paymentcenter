@@ -84,6 +84,39 @@ func (s *MySQLStore) ListOrders() ([]*model.Order, error) {
 	return orders, nil
 }
 
+// OrderStatusCount 按状态聚合的订单笔数。
+type OrderStatusCount struct {
+	Status string
+	Count  int64
+}
+
+// OrderPaidAmountByCurrency 已支付订单按币种汇总的最小货币单位金额。
+type OrderPaidAmountByCurrency struct {
+	Currency string
+	Amount   int64
+}
+
+// CountOrdersByStatus 按状态统计全部订单笔数。
+func (s *MySQLStore) CountOrdersByStatus() ([]OrderStatusCount, error) {
+	var rows []OrderStatusCount
+	err := s.db.Model(&model.Order{}).
+		Select("status AS status, COUNT(*) AS count").
+		Group("status").
+		Scan(&rows).Error
+	return rows, err
+}
+
+// SumPaidOrderAmountsByCurrency 汇总已支付订单金额（按币种，最小货币单位）。
+func (s *MySQLStore) SumPaidOrderAmountsByCurrency() ([]OrderPaidAmountByCurrency, error) {
+	var rows []OrderPaidAmountByCurrency
+	err := s.db.Model(&model.Order{}).
+		Select("UPPER(currency) AS currency, COALESCE(SUM(amount), 0) AS amount").
+		Where("status = ?", model.OrderStatusPaid).
+		Group("UPPER(currency)").
+		Scan(&rows).Error
+	return rows, err
+}
+
 // CreateUser 插入一条后台用户。
 func (s *MySQLStore) CreateUser(user *model.User) error {
 	return s.db.Create(user).Error

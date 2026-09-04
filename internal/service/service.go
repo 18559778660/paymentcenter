@@ -13,6 +13,8 @@ type Store interface {
 	SaveOrder(order *model.Order) error
 	GetOrder(id string) (*model.Order, error)
 	ListOrders() ([]*model.Order, error)
+	CountOrdersByStatus() ([]store.OrderStatusCount, error)
+	SumPaidOrderAmountsByCurrency() ([]store.OrderPaidAmountByCurrency, error)
 	CreateUser(user *model.User) error
 	SaveUser(user *model.User) error
 	GetUserByID(id uint) (*model.User, error)

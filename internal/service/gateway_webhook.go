@@ -25,13 +25,20 @@ type stripeWebhookEventThin struct {
 	} `json:"data"`
 }
 
+// stripeCheckoutSessionEventTypes 需要处理的 Checkout Session 事件。
+var stripeCheckoutSessionEventTypes = map[string]struct{}{
+	"checkout.session.completed":           {},
+	"checkout.session.expired":             {},
+	"checkout.session.async_payment_failed": {},
+}
+
 // peekStripeWebhookOrderID 从 Stripe Webhook 事件中提取订单 ID。
 func peekStripeWebhookOrderID(payload []byte) (string, error) {
 	var thin stripeWebhookEventThin
 	if err := json.Unmarshal(payload, &thin); err != nil {
 		return "", err
 	}
-	if thin.Type != "checkout.session.completed" {
+	if _, ok := stripeCheckoutSessionEventTypes[thin.Type]; !ok {
 		return "", nil
 	}
 	var sess stripeCheckoutSessionEvent
@@ -85,21 +92,54 @@ func (a *App) HandleStripeWebhook(payload []byte, signature string) error {
 	}
 	switch event.Type {
 	case "checkout.session.completed":
-		var sess stripe.CheckoutSession
-		if err := json.Unmarshal(event.Data.Raw, &sess); err != nil {
-			return err
-		}
-		if order.Status == model.OrderStatusPaid {
-			return nil
-		}
-		order.Status = model.OrderStatusPaid
-		order.ProviderRef = sess.ID
-		order.UpdatedAt = time.Now().UTC()
-		if err := a.store.SaveOrder(order); err != nil {
-			return err
-		}
-		return a.notifyMerchantSite(order)
+		return a.applyStripeCheckoutPaid(order, event.Data.Raw)
+	case "checkout.session.expired":
+		return a.applyStripeCheckoutTerminal(order, event.Data.Raw, model.OrderStatusCancelled, "Checkout session expired")
+	case "checkout.session.async_payment_failed":
+		return a.applyStripeCheckoutTerminal(order, event.Data.Raw, model.OrderStatusFailed, "Async payment failed")
 	default:
 		return nil
 	}
+}
+
+// applyStripeCheckoutPaid 将会话标记为已支付并通知商户站。
+func (a *App) applyStripeCheckoutPaid(order *model.Order, raw json.RawMessage) error {
+	var sess stripe.CheckoutSession
+	if err := json.Unmarshal(raw, &sess); err != nil {
+		return err
+	}
+	if order.Status == model.OrderStatusPaid {
+		return nil
+	}
+	order.Status = model.OrderStatusPaid
+	order.ProviderRef = sess.ID
+	order.ErrorMessage = ""
+	order.UpdatedAt = time.Now().UTC()
+	if err := a.store.SaveOrder(order); err != nil {
+		return err
+	}
+	return a.notifyMerchantSite(order)
+}
+
+// applyStripeCheckoutTerminal 将会话标记为终态（取消/失败）并通知商户站。
+func (a *App) applyStripeCheckoutTerminal(order *model.Order, raw json.RawMessage, status model.OrderStatus, message string) error {
+	var sess stripe.CheckoutSession
+	if err := json.Unmarshal(raw, &sess); err != nil {
+		return err
+	}
+	// 已支付不降级；已是失败/取消则幂等跳过。
+	if order.Status == model.OrderStatusPaid {
+		return nil
+	}
+	if order.Status == model.OrderStatusFailed || order.Status == model.OrderStatusCancelled {
+		return nil
+	}
+	order.Status = status
+	order.ProviderRef = firstNonEmpty(order.ProviderRef, sess.ID)
+	order.ErrorMessage = message
+	order.UpdatedAt = time.Now().UTC()
+	if err := a.store.SaveOrder(order); err != nil {
+		return err
+	}
+	return a.notifyMerchantSite(order)
 }

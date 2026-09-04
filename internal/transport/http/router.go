@@ -158,8 +158,9 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 			// 健康检查
 			authed.GET("/health", healthController.Health)
 
-			// 订单管理（查询 / 人工补单）
+			// 订单管理（查询 / 汇总 / 人工补单）；summary 须在 :id 之前注册
 			authed.GET("/orders", orderController.List)
+			authed.GET("/orders/summary", orderController.Summary)
 			authed.GET("/orders/:id", orderController.Get)
 			authed.POST("/orders/:id/paid", orderController.MarkPaid)
 			authed.POST("/orders/:id/failed", orderController.MarkFailed)

@@ -27,6 +27,16 @@ func (o *OrderController) List(c *gin.Context) {
 	response.Success(c, orders)
 }
 
+// Summary 查询订单汇总栏。
+func (o *OrderController) Summary(c *gin.Context) {
+	summary, err := o.app.GetOrderSummary()
+	if err != nil {
+		response.Fail(c, err.Error())
+		return
+	}
+	response.Success(c, summary)
+}
+
 // Get 按订单号查询单笔订单。
 func (o *OrderController) Get(c *gin.Context) {
 	order, err := o.app.GetOrder(c.Param("id"))

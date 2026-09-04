@@ -2,10 +2,12 @@ package service
 
 import (
 	"fmt"
+	"math"
 	"strings"
 	"time"
 
 	"paymentcenter/internal/model"
+	"paymentcenter/internal/store"
 )
 
 // CreateOrderResponse 创建支付订单出参。
@@ -46,6 +48,18 @@ func (a *App) GetOrder(id string) (*model.Order, error) {
 	return a.store.GetOrder(id)
 }
 
+// OrderSummary 管理端订单汇总栏。
+type OrderSummary struct {
+	TotalCount   int64  `json:"totalCount"`
+	UnpaidCount  int64  `json:"unpaidCount"`
+	FailedCount  int64  `json:"failedCount"`
+	SuccessCount int64  `json:"successCount"`
+	PayRate      string `json:"payRate"`
+	SuccessRate  string `json:"successRate"`
+	TotalRate    string `json:"totalRate"`
+	AmountUsd    string `json:"amountUsd"`
+}
+
 // ListOrders 查询订单列表（含商户名、账号名；B站优先读订单快照字段）。
 func (a *App) ListOrders() ([]OrderListItem, error) {
 	orders, err := a.store.ListOrders()
@@ -68,6 +82,104 @@ func (a *App) ListOrders() ([]OrderListItem, error) {
 		out = append(out, toOrderListItem(order, merchantNames, accountMap))
 	}
 	return out, nil
+}
+
+// GetOrderSummary 统计全部订单汇总（不受列表条数限制）。
+func (a *App) GetOrderSummary() (OrderSummary, error) {
+	rows, err := a.store.CountOrdersByStatus()
+	if err != nil {
+		return OrderSummary{}, err
+	}
+
+	var created, pending, paid, failed, cancelled int64
+	for _, row := range rows {
+		switch model.OrderStatus(row.Status) {
+		case model.OrderStatusCreated:
+			created = row.Count
+		case model.OrderStatusPending:
+			pending = row.Count
+		case model.OrderStatusPaid:
+			paid = row.Count
+		case model.OrderStatusFailed:
+			failed = row.Count
+		case model.OrderStatusCancelled:
+			cancelled = row.Count
+		}
+	}
+
+	total := created + pending + paid + failed + cancelled
+	unpaid := created + pending
+	failTotal := failed + cancelled
+	finished := paid + failTotal
+
+	amountUsd, err := a.sumPaidAmountUSD()
+	if err != nil {
+		return OrderSummary{}, err
+	}
+
+	return OrderSummary{
+		TotalCount:   total,
+		UnpaidCount:  unpaid,
+		FailedCount:  failTotal,
+		SuccessCount: paid,
+		PayRate:      formatPercent(paid, total),
+		SuccessRate:  formatPercent(paid, finished),
+		TotalRate:    formatPercent(finished, total),
+		AmountUsd:    fmt.Sprintf("%.2f", amountUsd),
+	}, nil
+}
+
+// sumPaidAmountUSD 将已支付金额按货币汇率折算为 USD。
+// 汇率约定：rate = 1 USD 可兑换的该币种数量（USD=1），USD = major / rate。
+func (a *App) sumPaidAmountUSD() (float64, error) {
+	paidRows, err := a.store.SumPaidOrderAmountsByCurrency()
+	if err != nil {
+		return 0, err
+	}
+	if len(paidRows) == 0 {
+		return 0, nil
+	}
+	currencies, err := a.store.ListCurrencies(store.CurrencyListFilter{})
+	if err != nil {
+		return 0, err
+	}
+	rateByCode := make(map[string]float64, len(currencies))
+	for _, item := range currencies {
+		code := strings.ToUpper(strings.TrimSpace(item.Code))
+		if code == "" {
+			continue
+		}
+		rateByCode[code] = item.Rate
+	}
+
+	var totalUSD float64
+	for _, row := range paidRows {
+		code := strings.ToUpper(strings.TrimSpace(row.Currency))
+		if code == "" || row.Amount == 0 {
+			continue
+		}
+		major := float64(row.Amount) / 100
+		if code == "USD" {
+			totalUSD += major
+			continue
+		}
+		rate := rateByCode[code]
+		if rate <= 0 || math.IsNaN(rate) || math.IsInf(rate, 0) {
+			// 无有效汇率时按 1:1 计入，避免整栏为空。
+			totalUSD += major
+			continue
+		}
+		totalUSD += major / rate
+	}
+	return totalUSD, nil
+}
+
+func formatPercent(num, den int64) string {
+	if den <= 0 {
+		return "0%"
+	}
+	pct := float64(num) * 100 / float64(den)
+	return fmt.Sprintf("%.2f%%", pct)
 }
 
 // MarkPaid 把订单标记为已支付。
