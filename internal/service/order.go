@@ -36,6 +36,7 @@ type OrderListItem struct {
 	SiteAmount       string `json:"siteAmount"`
 	TradeAmount      string `json:"tradeAmount"`
 	Fee              string `json:"fee"`
+	FeeAmount        int64  `json:"feeAmount"`
 	UsdDiff          string `json:"usdDiff"`
 	Status           string `json:"status"`
 	ErrorMessage     string `json:"errorMessage,omitempty"`
@@ -304,8 +305,9 @@ func toOrderListItem(
 		Currency:         order.Currency,
 		SiteAmount:       amountText,
 		TradeAmount:      amountText, // 当前无独立交易金额字段，与网站金额一致
-		Fee:              "-",        // 预留：暂无手续费字段
-		UsdDiff:          "-",        // 预留：暂无美元偏差字段
+		Fee:              formatOrderFee(order.Fee, order.Currency),
+		FeeAmount:        order.Fee,
+		UsdDiff:          "-", // 预留：暂无美元偏差字段
 		Status:           string(order.Status),
 		ErrorMessage:     order.ErrorMessage,
 		CreatedAt:        order.CreatedAt.Format("2006-01-02 15:04:05"),
@@ -321,4 +323,12 @@ func formatOrderAmount(amount int64, currency string) string {
 		return fmt.Sprintf("%.2f", major)
 	}
 	return fmt.Sprintf("%s %.2f", currency, major)
+}
+
+// formatOrderFee 格式化 Stripe 手续费；尚未回填时显示 "-"。
+func formatOrderFee(fee int64, currency string) string {
+	if fee <= 0 {
+		return "-"
+	}
+	return formatOrderAmount(fee, currency)
 }

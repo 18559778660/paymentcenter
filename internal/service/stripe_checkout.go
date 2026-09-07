@@ -5,7 +5,10 @@ import (
 	"strings"
 
 	"github.com/stripe/stripe-go/v82"
+	"github.com/stripe/stripe-go/v82/balancetransaction"
+	"github.com/stripe/stripe-go/v82/charge"
 	"github.com/stripe/stripe-go/v82/checkout/session"
+	"github.com/stripe/stripe-go/v82/paymentintent"
 )
 
 // stripeCheckoutInput Stripe Checkout 输入参数。
@@ -83,4 +86,77 @@ func createStripeCheckoutSession(in stripeCheckoutInput) (*stripeCheckoutResult,
 		SessionID:   sess.ID,
 		CheckoutURL: sess.URL,
 	}, nil
+}
+
+// fetchStripeCheckoutFee 通过 Checkout Session → PaymentIntent → Charge → BalanceTransaction 读取手续费。
+// 深 expand 经常只带回 ID、fee=0，因此改为逐步拉取。
+func fetchStripeCheckoutFee(secretKey, sessionID string) (int64, error) {
+	secretKey = strings.TrimSpace(secretKey)
+	sessionID = strings.TrimSpace(sessionID)
+	if secretKey == "" {
+		return 0, fmt.Errorf("stripe secret key missing")
+	}
+	if sessionID == "" {
+		return 0, fmt.Errorf("checkout session id missing")
+	}
+
+	stripe.Key = secretKey
+
+	sessParams := &stripe.CheckoutSessionParams{}
+	sessParams.AddExpand("payment_intent")
+	sess, err := session.Get(sessionID, sessParams)
+	if err != nil {
+		return 0, err
+	}
+	if sess.PaymentIntent == nil || strings.TrimSpace(sess.PaymentIntent.ID) == "" {
+		return 0, fmt.Errorf("checkout session missing payment_intent")
+	}
+
+	piParams := &stripe.PaymentIntentParams{}
+	piParams.AddExpand("latest_charge.balance_transaction")
+	pi, err := paymentintent.Get(sess.PaymentIntent.ID, piParams)
+	if err != nil {
+		return 0, err
+	}
+	if pi.LatestCharge == nil || strings.TrimSpace(pi.LatestCharge.ID) == "" {
+		return 0, fmt.Errorf("payment_intent missing latest_charge")
+	}
+
+	fee := feeFromBalanceTransaction(pi.LatestCharge.BalanceTransaction)
+	if fee > 0 {
+		return fee, nil
+	}
+
+	// Charge 上可能只有 balance_transaction ID，再单独取一次。
+	chParams := &stripe.ChargeParams{}
+	chParams.AddExpand("balance_transaction")
+	ch, err := charge.Get(pi.LatestCharge.ID, chParams)
+	if err != nil {
+		return 0, err
+	}
+	fee = feeFromBalanceTransaction(ch.BalanceTransaction)
+	if fee > 0 {
+		return fee, nil
+	}
+	if ch.BalanceTransaction == nil || strings.TrimSpace(ch.BalanceTransaction.ID) == "" {
+		return 0, fmt.Errorf("stripe fee not available yet")
+	}
+
+	bt, err := balancetransaction.Get(ch.BalanceTransaction.ID, nil)
+	if err != nil {
+		return 0, err
+	}
+	fee = feeFromBalanceTransaction(bt)
+	if fee <= 0 {
+		return 0, fmt.Errorf("stripe fee not available yet")
+	}
+	return fee, nil
+}
+
+// feeFromBalanceTransaction 读取已展开的 balance_transaction.fee。
+func feeFromBalanceTransaction(bt *stripe.BalanceTransaction) int64 {
+	if bt == nil {
+		return 0
+	}
+	return bt.Fee
 }

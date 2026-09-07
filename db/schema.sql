@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS payment_orders (
   notify_verify TEXT NULL COMMENT 'Shopyy异步verify快照JSON',
   checkout_url TEXT NULL COMMENT '支付跳转地址',
   provider_ref VARCHAR(128) NOT NULL DEFAULT '' COMMENT '支付平台交易号',
+  fee BIGINT NOT NULL DEFAULT 0 COMMENT 'Stripe手续费，最小货币单位',
   status VARCHAR(32) NOT NULL COMMENT 'created/pending/paid/failed/cancelled',
   error_message TEXT NULL COMMENT '失败原因',
   created_at DATETIME NOT NULL,

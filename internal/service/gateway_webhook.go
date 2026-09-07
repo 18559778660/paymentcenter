@@ -92,7 +92,7 @@ func (a *App) HandleStripeWebhook(payload []byte, signature string) error {
 	}
 	switch event.Type {
 	case "checkout.session.completed":
-		return a.applyStripeCheckoutPaid(order, event.Data.Raw)
+		return a.applyStripeCheckoutPaid(order, account, event.Data.Raw)
 	case "checkout.session.expired":
 		return a.applyStripeCheckoutTerminal(order, event.Data.Raw, model.OrderStatusCancelled, "Checkout session expired")
 	case "checkout.session.async_payment_failed":
@@ -102,23 +102,92 @@ func (a *App) HandleStripeWebhook(payload []byte, signature string) error {
 	}
 }
 
-// applyStripeCheckoutPaid 将会话标记为已支付并通知商户站。
-func (a *App) applyStripeCheckoutPaid(order *model.Order, raw json.RawMessage) error {
+// applyStripeCheckoutPaid 将会话标记为已支付、回填 Stripe 手续费并通知商户站。
+func (a *App) applyStripeCheckoutPaid(order *model.Order, account *model.ChannelAccount, raw json.RawMessage) error {
 	var sess stripe.CheckoutSession
 	if err := json.Unmarshal(raw, &sess); err != nil {
 		return err
 	}
+	sessionID := firstNonEmpty(sess.ID, order.ProviderRef)
+	fee := a.lookupStripeCheckoutFee(account, sessionID)
+
+	// 已支付：仅在尚未写入手续费时补 fee，避免重复通知 A 站。
 	if order.Status == model.OrderStatusPaid {
+		if order.Fee > 0 {
+			return nil
+		}
+		if fee > 0 {
+			order.Fee = fee
+			order.ProviderRef = firstNonEmpty(order.ProviderRef, sessionID)
+			order.UpdatedAt = time.Now().UTC()
+			return a.store.SaveOrder(order)
+		}
+		a.scheduleStripeFeeBackfill(order.ID, order.ChannelAccountID, sessionID)
 		return nil
 	}
+
 	order.Status = model.OrderStatusPaid
-	order.ProviderRef = sess.ID
+	order.ProviderRef = sessionID
+	if fee > 0 {
+		order.Fee = fee
+	}
 	order.ErrorMessage = ""
 	order.UpdatedAt = time.Now().UTC()
 	if err := a.store.SaveOrder(order); err != nil {
 		return err
 	}
+	if order.Fee <= 0 {
+		a.scheduleStripeFeeBackfill(order.ID, order.ChannelAccountID, sessionID)
+	}
 	return a.notifyMerchantSite(order)
+}
+
+// lookupStripeCheckoutFee 同步快速查询一次手续费；查不到返回 0，由异步补查承接。
+func (a *App) lookupStripeCheckoutFee(account *model.ChannelAccount, sessionID string) int64 {
+	secretKey, err := requireStripeSecretKey(account)
+	if err != nil {
+		return 0
+	}
+	fee, err := fetchStripeCheckoutFee(secretKey, sessionID)
+	if err != nil || fee <= 0 {
+		return 0
+	}
+	return fee
+}
+
+// scheduleStripeFeeBackfill 支付成功后若手续费尚未就绪，后台延迟二次/三次补查并落库。
+func (a *App) scheduleStripeFeeBackfill(orderID string, accountID uint, sessionID string) {
+	orderID = strings.TrimSpace(orderID)
+	sessionID = strings.TrimSpace(sessionID)
+	if orderID == "" || accountID == 0 || sessionID == "" {
+		return
+	}
+	go func() {
+		delays := []time.Duration{3 * time.Second, 8 * time.Second, 20 * time.Second}
+		for _, wait := range delays {
+			time.Sleep(wait)
+			order, err := a.store.GetOrder(orderID)
+			if err != nil {
+				return
+			}
+			if order.Fee > 0 {
+				return
+			}
+			account, err := a.store.GetChannelAccountByID(accountID)
+			if err != nil {
+				continue
+			}
+			fee := a.lookupStripeCheckoutFee(account, firstNonEmpty(sessionID, order.ProviderRef))
+			if fee <= 0 {
+				continue
+			}
+			order.Fee = fee
+			order.ProviderRef = firstNonEmpty(order.ProviderRef, sessionID)
+			order.UpdatedAt = time.Now().UTC()
+			_ = a.store.SaveOrder(order)
+			return
+		}
+	}()
 }
 
 // applyStripeCheckoutTerminal 将会话标记为终态（取消/失败）并通知商户站。

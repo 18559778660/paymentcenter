@@ -31,6 +31,7 @@ type Order struct {
 	NotifyVerify  string      `gorm:"column:notify_verify;type:text" json:"notify_verify,omitempty"`          // Shopyy 异步 verify 快照 JSON
 	CheckoutURL   string      `gorm:"column:checkout_url;type:text" json:"checkout_url,omitempty"`            // 支付跳转地址
 	ProviderRef   string      `gorm:"column:provider_ref;type:varchar(128);not null;default:''" json:"provider_ref,omitempty"` // 支付平台交易号
+	Fee           int64       `gorm:"column:fee;not null;default:0" json:"fee"`                                              // Stripe 手续费，最小货币单位
 	Status        OrderStatus `gorm:"column:status;type:varchar(32);not null;index" json:"status"`            // 订单状态
 	ErrorMessage  string      `gorm:"column:error_message;type:text" json:"error_message,omitempty"`          // 失败原因
 	CreatedAt     time.Time   `gorm:"column:created_at;index" json:"created_at"`                              // 创建时间
