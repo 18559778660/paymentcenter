@@ -307,7 +307,7 @@ func toOrderListItem(
 		TradeAmount:      amountText, // 当前无独立交易金额字段，与网站金额一致
 		Fee:              formatOrderFee(order.Fee, order.Currency),
 		FeeAmount:        order.Fee,
-		UsdDiff:          "-", // 预留：暂无美元偏差字段
+		UsdDiff:          formatOrderUsdDiff(order.UsdDiff),
 		Status:           string(order.Status),
 		ErrorMessage:     order.ErrorMessage,
 		CreatedAt:        order.CreatedAt.Format("2006-01-02 15:04:05"),
@@ -331,4 +331,60 @@ func formatOrderFee(fee int64, currency string) string {
 		return "-"
 	}
 	return formatOrderAmount(fee, currency)
+}
+
+// formatOrderUsdDiff 格式化按商户汇率偏差折算后的美元金额。
+func formatOrderUsdDiff(v *float64) string {
+	if v == nil {
+		return "-"
+	}
+	return fmt.Sprintf("USD %.2f", *v)
+}
+
+// calcMerchantUsdDiff 按商户汇率偏差计算订单美元金额。
+// 货币表汇率约定：rate = 1 USD 可兑换的该币种数量；非美元时：
+//
+//	美元金额 = 网站金额 / 汇率 × (100 - rateDiff) / 100
+//
+// 网站币为 USD 时不套用偏差，直接取网站金额。
+func (a *App) calcMerchantUsdDiff(amountMinor int64, currency string, rateDiff int) float64 {
+	if rateDiff < 0 {
+		rateDiff = 0
+	}
+	if rateDiff > 100 {
+		rateDiff = 100
+	}
+	major := stripeMinorToMajor(amountMinor, currency)
+	code := strings.ToUpper(strings.TrimSpace(currency))
+	if code == "" || code == "USD" {
+		return roundUSDAmount(major)
+	}
+
+	rate := 0.0
+	if item, err := a.store.FindCurrencyByCode(code); err == nil && item != nil {
+		rate = item.Rate
+	}
+	usd := major
+	if rate > 0 && !math.IsNaN(rate) && !math.IsInf(rate, 0) {
+		usd = major / rate
+	}
+	usd = usd * float64(100-rateDiff) / 100
+	return roundUSDAmount(usd)
+}
+
+// stripeMinorToMajor Stripe 最小货币单位转主单位。
+func stripeMinorToMajor(amount int64, currency string) float64 {
+	currency = strings.ToLower(strings.TrimSpace(currency))
+	if _, ok := stripeZeroDecimalCurrencies[currency]; ok {
+		return float64(amount)
+	}
+	divisor := 100.0
+	if _, ok := stripeThreeDecimalCurrencies[currency]; ok {
+		divisor = 1000.0
+	}
+	return float64(amount) / divisor
+}
+
+func roundUSDAmount(v float64) float64 {
+	return math.Round(v*10000) / 10000
 }

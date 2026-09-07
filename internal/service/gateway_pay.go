@@ -86,6 +86,7 @@ func (a *App) GatewayPay(req GatewayPayRequest, q GatewayPayQuery, secretKey str
 			return CreateOrderResponse{}, siteErr
 		}
 	}
+	usdDiff := a.calcMerchantUsdDiff(req.Amount, req.Currency, merchant.RateDiff)
 	order := &model.Order{
 		ID:               orderID,
 		MerchantOrder:    strings.TrimSpace(req.MerchantOrder),
@@ -101,6 +102,7 @@ func (a *App) GatewayPay(req GatewayPayRequest, q GatewayPayQuery, secretKey str
 		ReturnURL:        strings.TrimSpace(req.ReturnURL),
 		NotifyURL:        strings.TrimSpace(req.NotifyURL),
 		NotifyVerify:     string(verifyJSON),
+		UsdDiff:          &usdDiff,
 		Status:           model.OrderStatusCreated,
 		CreatedAt:        now,
 		UpdatedAt:        now,

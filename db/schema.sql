@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS payment_orders (
   checkout_url TEXT NULL COMMENT '支付跳转地址',
   provider_ref VARCHAR(128) NOT NULL DEFAULT '' COMMENT '支付平台交易号',
   fee BIGINT NOT NULL DEFAULT 0 COMMENT 'Stripe手续费，最小货币单位',
+  usd_diff DECIMAL(18,4) NULL COMMENT '按商户汇率偏差折算后的美元金额',
   status VARCHAR(32) NOT NULL COMMENT 'created/pending/paid/failed/cancelled',
   error_message TEXT NULL COMMENT '失败原因',
   created_at DATETIME NOT NULL,

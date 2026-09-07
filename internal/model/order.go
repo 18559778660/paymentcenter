@@ -32,6 +32,7 @@ type Order struct {
 	CheckoutURL   string      `gorm:"column:checkout_url;type:text" json:"checkout_url,omitempty"`            // 支付跳转地址
 	ProviderRef   string      `gorm:"column:provider_ref;type:varchar(128);not null;default:''" json:"provider_ref,omitempty"` // 支付平台交易号
 	Fee           int64       `gorm:"column:fee;not null;default:0" json:"fee"`                                              // Stripe 手续费，最小货币单位
+	UsdDiff       *float64    `gorm:"column:usd_diff;type:decimal(18,4)" json:"usd_diff,omitempty"`                         // 按商户汇率偏差折算后的美元金额
 	Status        OrderStatus `gorm:"column:status;type:varchar(32);not null;index" json:"status"`            // 订单状态
 	ErrorMessage  string      `gorm:"column:error_message;type:text" json:"error_message,omitempty"`          // 失败原因
 	CreatedAt     time.Time   `gorm:"column:created_at;index" json:"created_at"`                              // 创建时间
