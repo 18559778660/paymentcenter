@@ -35,6 +35,22 @@ CREATE TABLE IF NOT EXISTS payment_orders (
   KEY idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS payment_order_logs (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '日志ID',
+  order_id VARCHAR(64) NOT NULL DEFAULT '' COMMENT '支付中心订单号',
+  merchant_id BIGINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '商户ID',
+  merchant_order VARCHAR(128) NOT NULL DEFAULT '' COMMENT 'A站订单号',
+  type VARCHAR(32) NOT NULL COMMENT 'log_record/fail_log/fail_record',
+  remark TEXT NOT NULL COMMENT '备注',
+  created_at DATETIME NOT NULL COMMENT '创建时间',
+  PRIMARY KEY (id),
+  KEY idx_order_logs_order_id (order_id),
+  KEY idx_order_logs_merchant_id (merchant_id),
+  KEY idx_order_logs_merchant_order (merchant_order),
+  KEY idx_order_logs_type (type),
+  KEY idx_order_logs_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS users (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '后台用户ID',
   username VARCHAR(64) NOT NULL COMMENT '登录账号',

@@ -15,6 +15,8 @@ type Store interface {
 	ListOrders() ([]*model.Order, error)
 	CountOrdersByStatus() ([]store.OrderStatusCount, error)
 	SumPaidOrderAmountsByCurrency() ([]store.OrderPaidAmountByCurrency, error)
+	CreateOrderLog(item *model.OrderLog) error
+	ListOrderLogs(filter store.OrderLogListFilter) ([]model.OrderLog, error)
 	CreateUser(user *model.User) error
 	SaveUser(user *model.User) error
 	GetUserByID(id uint) (*model.User, error)

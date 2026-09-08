@@ -195,6 +195,7 @@ func (a *App) MarkPaid(id, providerRef string) (*model.Order, error) {
 	if err := a.store.SaveOrder(order); err != nil {
 		return nil, err
 	}
+	a.appendOrderLogFromOrder(order, model.OrderLogTypeRecord, "人工标记订单已支付")
 	return order, nil
 }
 
@@ -210,6 +211,11 @@ func (a *App) MarkFailed(id, message string) (*model.Order, error) {
 	if err := a.store.SaveOrder(order); err != nil {
 		return nil, err
 	}
+	remark := "人工标记订单失败"
+	if strings.TrimSpace(message) != "" {
+		remark = remark + ": " + strings.TrimSpace(message)
+	}
+	a.appendOrderLogFromOrder(order, model.OrderLogTypeFailRecord, remark)
 	return order, nil
 }
 

@@ -39,6 +39,7 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 	stripeWordBankController := controller.NewStripeWordBankController(app)
 	gatewayController := controller.NewGatewayController(app)
 	orderController := controller.NewOrderController(app)
+	orderLogController := controller.NewOrderLogController(app)
 
 	api := r.Group("/api")
 	{
@@ -164,6 +165,9 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 			authed.GET("/orders/:id", orderController.Get)
 			authed.POST("/orders/:id/paid", orderController.MarkPaid)
 			authed.POST("/orders/:id/failed", orderController.MarkFailed)
+
+			// 订单日志
+			authed.GET("/order-logs", orderLogController.List)
 		}
 	}
 

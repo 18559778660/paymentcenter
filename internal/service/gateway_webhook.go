@@ -136,10 +136,16 @@ func (a *App) applyStripeCheckoutPaid(order *model.Order, account *model.Channel
 	if err := a.store.SaveOrder(order); err != nil {
 		return err
 	}
+	a.appendOrderLogFromOrder(order, model.OrderLogTypeRecord, "Stripe webhook 验签成功，订单标记已支付")
 	if order.Fee <= 0 {
 		a.scheduleStripeFeeBackfill(order.ID, order.ChannelAccountID, sessionID)
 	}
-	return a.notifyMerchantSite(order)
+	if err := a.notifyMerchantSite(order); err != nil {
+		a.appendOrderLogFromOrder(order, model.OrderLogTypeFailLog, "异步通知A站失败: "+err.Error())
+		return err
+	}
+	a.appendOrderLogFromOrder(order, model.OrderLogTypeRecord, "异步通知A站成功")
+	return nil
 }
 
 // lookupStripeCheckoutFee 同步快速查询一次手续费；查不到返回 0，由异步补查承接。
@@ -210,5 +216,11 @@ func (a *App) applyStripeCheckoutTerminal(order *model.Order, raw json.RawMessag
 	if err := a.store.SaveOrder(order); err != nil {
 		return err
 	}
-	return a.notifyMerchantSite(order)
+	a.appendOrderLogFromOrder(order, model.OrderLogTypeFailRecord, message+"; 更新订单状态为 "+string(status))
+	if err := a.notifyMerchantSite(order); err != nil {
+		a.appendOrderLogFromOrder(order, model.OrderLogTypeFailLog, "异步通知A站失败: "+err.Error())
+		return err
+	}
+	a.appendOrderLogFromOrder(order, model.OrderLogTypeRecord, "异步通知A站成功")
+	return nil
 }

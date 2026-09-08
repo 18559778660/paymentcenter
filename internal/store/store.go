@@ -23,6 +23,7 @@ func NewMySQLStore(dsn string) (*MySQLStore, error) {
 	}
 	if err := db.AutoMigrate(
 		&model.Order{},
+		&model.OrderLog{},
 		&model.User{},
 		&model.Role{},
 		&model.Menu{},
@@ -115,6 +116,39 @@ func (s *MySQLStore) SumPaidOrderAmountsByCurrency() ([]OrderPaidAmountByCurrenc
 		Group("UPPER(currency)").
 		Scan(&rows).Error
 	return rows, err
+}
+
+// OrderLogListFilter 订单日志列表筛选。
+type OrderLogListFilter struct {
+	MerchantID    uint
+	MerchantOrder string
+	CreatedFrom   string
+	CreatedTo     string
+}
+
+// CreateOrderLog 插入一条订单日志。
+func (s *MySQLStore) CreateOrderLog(item *model.OrderLog) error {
+	return s.db.Create(item).Error
+}
+
+// ListOrderLogs 按条件查询订单日志，按 id 倒序，最多 500 条。
+func (s *MySQLStore) ListOrderLogs(filter OrderLogListFilter) ([]model.OrderLog, error) {
+	q := s.db.Model(&model.OrderLog{})
+	if filter.MerchantID > 0 {
+		q = q.Where("merchant_id = ?", filter.MerchantID)
+	}
+	if filter.MerchantOrder != "" {
+		q = q.Where("merchant_order LIKE ?", "%"+filter.MerchantOrder+"%")
+	}
+	if filter.CreatedFrom != "" {
+		q = q.Where("created_at >= ?", filter.CreatedFrom)
+	}
+	if filter.CreatedTo != "" {
+		q = q.Where("created_at <= ?", filter.CreatedTo)
+	}
+	var list []model.OrderLog
+	err := q.Order("id DESC").Limit(500).Find(&list).Error
+	return list, err
 }
 
 // CreateUser 插入一条后台用户。
