@@ -36,6 +36,21 @@ type GatewayPayRequest struct {
 	Subject       string
 	SiteMode      string
 	ShopyyVerify  ShopyyNotifyVerifySnapshot
+	CustomerName  string
+	CustomerEmail string
+	CustomerPhone string
+	CustomerIP    string
+	BillCountry   string
+	BillState     string
+	BillCity      string
+	BillZip       string
+	BillAddress   string
+	ShipCountry   string
+	ShipState     string
+	ShipCity      string
+	ShipZip       string
+	ShipAddress   string
+	OrderGoods    string // 商品快照 JSON
 }
 
 // GatewayPayQuery 网关路由参数。
@@ -122,6 +137,21 @@ func (a *App) GatewayPay(req GatewayPayRequest, q GatewayPayQuery, secretKey str
 		NotifyVerify:     string(verifyJSON),
 		UsdDiff:          &usdDiff,
 		Status:           model.OrderStatusCreated,
+		CustomerName:     strings.TrimSpace(req.CustomerName),
+		CustomerEmail:    strings.TrimSpace(req.CustomerEmail),
+		CustomerPhone:    strings.TrimSpace(req.CustomerPhone),
+		CustomerIP:       strings.TrimSpace(req.CustomerIP),
+		BillCountry:      strings.TrimSpace(req.BillCountry),
+		BillState:        strings.TrimSpace(req.BillState),
+		BillCity:         strings.TrimSpace(req.BillCity),
+		BillZip:          strings.TrimSpace(req.BillZip),
+		BillAddress:      strings.TrimSpace(req.BillAddress),
+		ShipCountry:      strings.TrimSpace(req.ShipCountry),
+		ShipState:        strings.TrimSpace(req.ShipState),
+		ShipCity:         strings.TrimSpace(req.ShipCity),
+		ShipZip:          strings.TrimSpace(req.ShipZip),
+		ShipAddress:      strings.TrimSpace(req.ShipAddress),
+		OrderGoods:       strings.TrimSpace(req.OrderGoods),
 		CreatedAt:        now,
 		UpdatedAt:        now,
 	}

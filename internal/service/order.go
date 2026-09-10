@@ -40,6 +40,21 @@ type OrderListItem struct {
 	UsdDiff          string `json:"usdDiff"`
 	Status           string `json:"status"`
 	ErrorMessage     string `json:"errorMessage,omitempty"`
+	CustomerName     string `json:"customerName"`
+	CustomerEmail    string `json:"customerEmail"`
+	CustomerPhone    string `json:"customerPhone"`
+	CustomerIP       string `json:"customerIp"`
+	BillCountry      string `json:"billCountry"`
+	BillState        string `json:"billState"`
+	BillCity         string `json:"billCity"`
+	BillZip          string `json:"billZip"`
+	BillAddress      string `json:"billAddress"`
+	ShipCountry      string `json:"shipCountry"`
+	ShipState        string `json:"shipState"`
+	ShipCity         string `json:"shipCity"`
+	ShipZip          string `json:"shipZip"`
+	ShipAddress      string `json:"shipAddress"`
+	OrderGoods       string `json:"orderGoods,omitempty"`
 	CreatedAt        string `json:"createdAt"`
 	UpdatedAt        string `json:"updatedAt"`
 }
@@ -316,6 +331,21 @@ func toOrderListItem(
 		UsdDiff:          formatOrderUsdDiff(order.UsdDiff),
 		Status:           string(order.Status),
 		ErrorMessage:     order.ErrorMessage,
+		CustomerName:     order.CustomerName,
+		CustomerEmail:    order.CustomerEmail,
+		CustomerPhone:    order.CustomerPhone,
+		CustomerIP:       order.CustomerIP,
+		BillCountry:      order.BillCountry,
+		BillState:        order.BillState,
+		BillCity:         order.BillCity,
+		BillZip:          order.BillZip,
+		BillAddress:      order.BillAddress,
+		ShipCountry:      order.ShipCountry,
+		ShipState:        order.ShipState,
+		ShipCity:         order.ShipCity,
+		ShipZip:          order.ShipZip,
+		ShipAddress:      order.ShipAddress,
+		OrderGoods:       order.OrderGoods,
 		CreatedAt:        order.CreatedAt.Format("2006-01-02 15:04:05"),
 		UpdatedAt:        order.UpdatedAt.Format("2006-01-02 15:04:05"),
 	}

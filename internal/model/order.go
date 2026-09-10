@@ -35,6 +35,21 @@ type Order struct {
 	UsdDiff       *float64    `gorm:"column:usd_diff;type:decimal(18,4)" json:"usd_diff,omitempty"`                         // 按商户汇率偏差折算后的美元金额
 	Status        OrderStatus `gorm:"column:status;type:varchar(32);not null;index" json:"status"`            // 订单状态
 	ErrorMessage  string      `gorm:"column:error_message;type:text" json:"error_message,omitempty"`          // 失败原因
+	CustomerName  string      `gorm:"column:customer_name;type:varchar(128);not null;default:''" json:"customer_name"` // 客户姓名快照
+	CustomerEmail string      `gorm:"column:customer_email;type:varchar(191);not null;default:''" json:"customer_email"` // 客户邮箱快照
+	CustomerPhone string      `gorm:"column:customer_phone;type:varchar(64);not null;default:''" json:"customer_phone"` // 客户电话快照
+	CustomerIP    string      `gorm:"column:customer_ip;type:varchar(64);not null;default:''" json:"customer_ip"`       // 客户 IP 快照
+	BillCountry   string      `gorm:"column:bill_country;type:varchar(64);not null;default:''" json:"bill_country"`     // 账单国家
+	BillState     string      `gorm:"column:bill_state;type:varchar(128);not null;default:''" json:"bill_state"`       // 账单省/州
+	BillCity      string      `gorm:"column:bill_city;type:varchar(128);not null;default:''" json:"bill_city"`         // 账单城市
+	BillZip       string      `gorm:"column:bill_zip;type:varchar(32);not null;default:''" json:"bill_zip"`             // 账单邮编
+	BillAddress   string      `gorm:"column:bill_address;type:varchar(512);not null;default:''" json:"bill_address"`   // 账单地址
+	ShipCountry   string      `gorm:"column:ship_country;type:varchar(64);not null;default:''" json:"ship_country"`     // 配送国家
+	ShipState     string      `gorm:"column:ship_state;type:varchar(128);not null;default:''" json:"ship_state"`       // 配送省/州
+	ShipCity      string      `gorm:"column:ship_city;type:varchar(128);not null;default:''" json:"ship_city"`         // 配送城市
+	ShipZip       string      `gorm:"column:ship_zip;type:varchar(32);not null;default:''" json:"ship_zip"`             // 配送邮编
+	ShipAddress   string      `gorm:"column:ship_address;type:varchar(512);not null;default:''" json:"ship_address"`   // 配送地址
+	OrderGoods    string      `gorm:"column:order_goods;type:text" json:"order_goods,omitempty"`                            // 商品快照 JSON
 	CreatedAt     time.Time   `gorm:"column:created_at;index" json:"created_at"`                              // 创建时间
 	UpdatedAt     time.Time   `gorm:"column:updated_at" json:"updated_at"`                                    // 更新时间
 }
