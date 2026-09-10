@@ -76,13 +76,89 @@ func (s *MySQLStore) GetOrder(id string) (*model.Order, error) {
 	return &order, nil
 }
 
-// ListOrders 查询最近 100 笔订单，按创建时间倒序。
-func (s *MySQLStore) ListOrders() ([]*model.Order, error) {
+// ListOrders 按条件查询订单，按创建时间倒序，最多 200 条。
+func (s *MySQLStore) ListOrders(filter OrderListFilter) ([]*model.Order, error) {
+	q := s.db.Model(&model.Order{})
+	if filter.MerchantID > 0 {
+		q = q.Where("merchant_id = ?", filter.MerchantID)
+	}
+	if filter.CustomerEmail != "" {
+		q = q.Where("customer_email LIKE ?", "%"+filter.CustomerEmail+"%")
+	}
+	if filter.CustomerPhone != "" {
+		q = q.Where("customer_phone LIKE ?", "%"+filter.CustomerPhone+"%")
+	}
+	if filter.CustomerIP != "" {
+		q = q.Where("customer_ip LIKE ?", "%"+filter.CustomerIP+"%")
+	}
+	if filter.MerchantOrder != "" {
+		like := "%" + filter.MerchantOrder + "%"
+		q = q.Where("merchant_order LIKE ? OR id LIKE ?", like, like)
+	}
+	if filter.MerchantSite != "" {
+		q = q.Where("merchant_site = ?", filter.MerchantSite)
+	}
+	if filter.Status != "" {
+		q = q.Where("status = ?", filter.Status)
+	}
+	if filter.Provider != "" {
+		q = q.Where("LOWER(provider) = ?", strings.ToLower(filter.Provider))
+	}
+	if filter.ChannelAccountID > 0 {
+		q = q.Where("channel_account_id = ?", filter.ChannelAccountID)
+	}
+	if filter.SiteB != "" {
+		q = q.Where("site_b = ?", filter.SiteB)
+	}
+	if filter.CreatedFrom != "" {
+		q = q.Where("created_at >= ?", filter.CreatedFrom)
+	}
+	if filter.CreatedTo != "" {
+		q = q.Where("created_at <= ?", filter.CreatedTo)
+	}
+	if filter.Country != "" {
+		code := strings.ToUpper(filter.Country)
+		q = q.Where("UPPER(bill_country) = ? OR UPPER(ship_country) = ?", code, code)
+	}
+	if filter.Currency != "" {
+		q = q.Where("UPPER(currency) = ?", strings.ToUpper(filter.Currency))
+	}
+	if filter.MinAmount != nil {
+		q = q.Where("amount >= ?", *filter.MinAmount)
+	}
+	if filter.MaxAmount != nil {
+		q = q.Where("amount <= ?", *filter.MaxAmount)
+	}
+	if filter.ProviderRef != "" {
+		q = q.Where("provider_ref LIKE ?", "%"+filter.ProviderRef+"%")
+	}
+
 	var orders []*model.Order
-	if err := s.db.Order("created_at DESC").Limit(100).Find(&orders).Error; err != nil {
+	if err := q.Order("created_at DESC").Limit(200).Find(&orders).Error; err != nil {
 		return nil, err
 	}
 	return orders, nil
+}
+
+// OrderListFilter 订单列表筛选。
+type OrderListFilter struct {
+	MerchantID       uint
+	CustomerEmail    string
+	CustomerPhone    string
+	CustomerIP       string
+	MerchantOrder    string
+	MerchantSite     string
+	Status           string
+	Provider         string
+	ChannelAccountID uint
+	SiteB            string
+	CreatedFrom      string
+	CreatedTo        string
+	Country          string
+	Currency         string
+	MinAmount        *int64
+	MaxAmount        *int64
+	ProviderRef      string
 }
 
 // OrderStatusCount 按状态聚合的订单笔数。

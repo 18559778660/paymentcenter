@@ -12,7 +12,7 @@ import (
 type Store interface {
 	SaveOrder(order *model.Order) error
 	GetOrder(id string) (*model.Order, error)
-	ListOrders() ([]*model.Order, error)
+	ListOrders(filter store.OrderListFilter) ([]*model.Order, error)
 	CountOrdersByStatus() ([]store.OrderStatusCount, error)
 	SumPaidOrderAmountsByCurrency() ([]store.OrderPaidAmountByCurrency, error)
 	CreateOrderLog(item *model.OrderLog) error

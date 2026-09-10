@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"math"
+	"strconv"
 	"strings"
 	"time"
 
@@ -76,9 +77,52 @@ type OrderSummary struct {
 	AmountUsd    string `json:"amountUsd"`
 }
 
+// OrderListQuery 管理端订单列表筛选。
+type OrderListQuery struct {
+	MerchantID       uint
+	CustomerEmail    string
+	CustomerPhone    string
+	CustomerIP       string
+	MerchantOrder    string
+	MerchantSite     string
+	Status           string
+	Provider         string
+	ChannelAccountID uint
+	SiteB            string
+	CreatedFrom      string
+	CreatedTo        string
+	Country          string
+	Currency         string
+	MinAmountMajor   string
+	MaxAmountMajor   string
+	ProviderRef      string
+}
+
 // ListOrders 查询订单列表（含商户名、账号名；B站优先读订单快照字段）。
-func (a *App) ListOrders() ([]OrderListItem, error) {
-	orders, err := a.store.ListOrders()
+func (a *App) ListOrders(q OrderListQuery) ([]OrderListItem, error) {
+	minAmount, maxAmount, err := parseOrderAmountRange(q.MinAmountMajor, q.MaxAmountMajor, q.Currency)
+	if err != nil {
+		return nil, err
+	}
+	orders, err := a.store.ListOrders(store.OrderListFilter{
+		MerchantID:       q.MerchantID,
+		CustomerEmail:    strings.TrimSpace(q.CustomerEmail),
+		CustomerPhone:    strings.TrimSpace(q.CustomerPhone),
+		CustomerIP:       strings.TrimSpace(q.CustomerIP),
+		MerchantOrder:    strings.TrimSpace(q.MerchantOrder),
+		MerchantSite:     strings.TrimSpace(q.MerchantSite),
+		Status:           strings.TrimSpace(q.Status),
+		Provider:         strings.TrimSpace(q.Provider),
+		ChannelAccountID: q.ChannelAccountID,
+		SiteB:            strings.TrimSpace(q.SiteB),
+		CreatedFrom:      strings.TrimSpace(q.CreatedFrom),
+		CreatedTo:        strings.TrimSpace(q.CreatedTo),
+		Country:          strings.TrimSpace(q.Country),
+		Currency:         strings.TrimSpace(q.Currency),
+		MinAmount:        minAmount,
+		MaxAmount:        maxAmount,
+		ProviderRef:      strings.TrimSpace(q.ProviderRef),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -98,6 +142,51 @@ func (a *App) ListOrders() ([]OrderListItem, error) {
 		out = append(out, toOrderListItem(order, merchantNames, accountMap))
 	}
 	return out, nil
+}
+
+// parseOrderAmountRange 将前端主单位金额转为最小货币单位；未填币种时按 ×100。
+func parseOrderAmountRange(minRaw, maxRaw, currency string) (minAmount, maxAmount *int64, err error) {
+	currency = strings.TrimSpace(currency)
+	if strings.TrimSpace(minRaw) != "" {
+		major, parseErr := strconv.ParseFloat(strings.TrimSpace(minRaw), 64)
+		if parseErr != nil || major < 0 {
+			return nil, nil, fmt.Errorf("无效的最小金额")
+		}
+		minor, convErr := majorAmountToStripeMinorOrDefault(major, currency)
+		if convErr != nil {
+			return nil, nil, convErr
+		}
+		minAmount = &minor
+	}
+	if strings.TrimSpace(maxRaw) != "" {
+		major, parseErr := strconv.ParseFloat(strings.TrimSpace(maxRaw), 64)
+		if parseErr != nil || major < 0 {
+			return nil, nil, fmt.Errorf("无效的最大金额")
+		}
+		minor, convErr := majorAmountToStripeMinorOrDefault(major, currency)
+		if convErr != nil {
+			return nil, nil, convErr
+		}
+		maxAmount = &minor
+	}
+	if minAmount != nil && maxAmount != nil && *minAmount > *maxAmount {
+		return nil, nil, fmt.Errorf("最小金额不能大于最大金额")
+	}
+	return minAmount, maxAmount, nil
+}
+
+func majorAmountToStripeMinorOrDefault(amount float64, currency string) (int64, error) {
+	if amount < 0 {
+		return 0, fmt.Errorf("无效金额")
+	}
+	if amount == 0 {
+		return 0, nil
+	}
+	currency = strings.TrimSpace(currency)
+	if currency == "" {
+		return int64(math.Round(amount * 100)), nil
+	}
+	return majorAmountToStripeMinor(amount, currency)
 }
 
 // GetOrderSummary 统计全部订单汇总（不受列表条数限制）。

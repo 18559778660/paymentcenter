@@ -1,6 +1,9 @@
 package controller
 
 import (
+	"fmt"
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 
 	"paymentcenter/internal/service"
@@ -19,12 +22,51 @@ func NewOrderController(app *service.App) *OrderController {
 
 // List 查询订单列表。
 func (o *OrderController) List(c *gin.Context) {
-	orders, err := o.app.ListOrders()
+	q, err := parseOrderListQuery(c)
+	if err != nil {
+		response.Fail(c, err.Error())
+		return
+	}
+	orders, err := o.app.ListOrders(q)
 	if err != nil {
 		response.Fail(c, err.Error())
 		return
 	}
 	response.Success(c, orders)
+}
+
+func parseOrderListQuery(c *gin.Context) (service.OrderListQuery, error) {
+	var q service.OrderListQuery
+	if raw := c.Query("merchantId"); raw != "" {
+		n, err := strconv.ParseUint(raw, 10, 64)
+		if err != nil {
+			return q, fmt.Errorf("无效的商户ID")
+		}
+		q.MerchantID = uint(n)
+	}
+	if raw := c.Query("accountId"); raw != "" {
+		n, err := strconv.ParseUint(raw, 10, 64)
+		if err != nil {
+			return q, fmt.Errorf("无效的账号ID")
+		}
+		q.ChannelAccountID = uint(n)
+	}
+	q.CustomerEmail = c.Query("email")
+	q.CustomerPhone = c.Query("phone")
+	q.CustomerIP = c.Query("ip")
+	q.MerchantOrder = c.Query("orderNo")
+	q.MerchantSite = c.Query("siteA")
+	q.Status = c.Query("status")
+	q.Provider = c.Query("payMethod")
+	q.SiteB = c.Query("siteB")
+	q.CreatedFrom = c.Query("createdFrom")
+	q.CreatedTo = c.Query("createdTo")
+	q.Country = c.Query("country")
+	q.Currency = c.Query("currency")
+	q.MinAmountMajor = c.Query("minAmount")
+	q.MaxAmountMajor = c.Query("maxAmount")
+	q.ProviderRef = c.Query("transactionNo")
+	return q, nil
 }
 
 // Summary 查询订单汇总栏。
