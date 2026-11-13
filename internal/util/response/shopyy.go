@@ -35,12 +35,18 @@ type ShopyyPayBody struct {
 	Reason    string         `json:"reason"`
 }
 
-// ShopyyPaySuccess 返回 Shopyy 支付成功响应。
-func ShopyyPaySuccess(c *gin.Context, checkoutURL string, siteMode string) {
+// ShopyyPaySuccess 返回 Shopyy 支付成功响应。pay_skip_url 为 B 站壳包返回的伪装跳转地址。
+func ShopyyPaySuccess(c *gin.Context, checkoutURL string, payCode, payHTMLType int64) {
+	if payCode == 0 {
+		payCode = ShopyyDataCodeSuccess
+	}
+	if payHTMLType == 0 {
+		payHTMLType = ShopyyPayHTMLType
+	}
 	writeShopyyPay(c, ShopyyErrorCodeSuccess, &ShopyyPayData{
 		Code:        ShopyyDataCodeSuccess,
-		PayCode:     shopyySiteModeInt(siteMode),
-		PayHTMLType: ShopyyPayHTMLType,
+		PayCode:     payCode,
+		PayHTMLType: payHTMLType,
 		PaySkipURL:  checkoutURL,
 		Version:     ShopyyVersion,
 	}, "Success")

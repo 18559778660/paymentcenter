@@ -1,8 +1,9 @@
 package service
 
 import (
-	"errors"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -21,6 +22,7 @@ var (
 	ErrGatewayStripeFailed                = errors.New("gateway stripe failed")
 	ErrGatewayAccountStripeKeyMissing     = errors.New("gateway account stripe key missing")
 	ErrGatewayAccountWebhookSecretMissing = errors.New("gateway account webhook secret missing")
+	ErrGatewaySiteBFailed                 = errors.New("gateway site b failed")
 )
 
 // GatewayPayRequest 网关支付内部订单字段（由 A 站入参映射而来）。
@@ -35,6 +37,7 @@ type GatewayPayRequest struct {
 	ResultURL     string
 	Subject       string
 	SiteMode      string
+	OrderDetails  gatewayOrderDetails
 	ShopyyVerify  ShopyyNotifyVerifySnapshot
 	CustomerName  string
 	CustomerEmail string
@@ -112,11 +115,15 @@ func (a *App) GatewayPay(req GatewayPayRequest, q GatewayPayQuery, secretKey str
 	}
 	siteBID := account.SiteBID
 	siteBDomain := ""
+	var siteB *model.SiteB
 	if siteBID > 0 {
-		if siteB, siteErr := a.store.GetSiteBByID(siteBID); siteErr == nil && siteB != nil {
-			siteBDomain = strings.TrimSpace(siteB.Domain)
-		} else if siteErr != nil && !isNotFound(siteErr) {
+		item, siteErr := a.store.GetSiteBByID(siteBID)
+		if siteErr != nil && !isNotFound(siteErr) {
 			return CreateOrderResponse{}, siteErr
+		}
+		if siteErr == nil && item != nil {
+			siteB = item
+			siteBDomain = strings.TrimSpace(item.Domain)
 		}
 	}
 	usdDiff := a.calcMerchantUsdDiff(req.Amount, req.Currency, merchant.RateDiff)
@@ -159,33 +166,36 @@ func (a *App) GatewayPay(req GatewayPayRequest, q GatewayPayQuery, secretKey str
 		a.appendOrderLogFromOrder(order, model.OrderLogTypeFailLog, "订单落库失败: "+err.Error())
 		return CreateOrderResponse{}, err
 	}
-	a.appendOrderLogFromOrder(order, model.OrderLogTypeRecord, "订单已创建，开始请求通道创建支付会话")
+	a.appendOrderLogFromOrder(order, model.OrderLogTypeRecord, "订单已创建，开始请求 B 站创建支付跳转")
 
-	checkoutURL, providerRef, err := a.createGatewayCheckout(platform, account, order, req.Subject, req.ResultURL, req.CancelURL)
+	checkout, err := a.createGatewayCheckout(platform, account, siteB, order, req)
 	if err != nil {
 		order.Status = model.OrderStatusFailed
 		order.ErrorMessage = err.Error()
 		order.UpdatedAt = time.Now().UTC()
 		_ = a.store.SaveOrder(order)
-		a.appendOrderLogFromOrder(order, model.OrderLogTypeFailLog, "创建支付会话失败: "+err.Error())
+		a.appendOrderLogFromOrder(order, model.OrderLogTypeFailLog, "创建支付跳转失败: "+err.Error())
 		a.appendOrderLogFromOrder(order, model.OrderLogTypeFailRecord, "更新订单状态为 failed")
 		return CreateOrderResponse{}, err
 	}
 
 	order.Status = model.OrderStatusPending
-	order.CheckoutURL = checkoutURL
-	order.ProviderRef = providerRef
+	order.CheckoutURL = checkout.CheckoutURL
+	order.ProviderRef = checkout.ProviderRef
 	order.UpdatedAt = time.Now().UTC()
 	if err := a.store.SaveOrder(order); err != nil {
 		a.appendOrderLogFromOrder(order, model.OrderLogTypeFailLog, "更新待支付状态失败: "+err.Error())
 		return CreateOrderResponse{}, err
 	}
 	a.appendOrderLogFromOrder(order, model.OrderLogTypeRecord,
-		`开始跳转链接:{"code":2,"pay_code":2,"pay_skip_url":"`+checkoutURL+`","pay_html_type":1}`)
+		fmt.Sprintf(`开始跳转链接:{"code":2,"pay_code":%d,"pay_skip_url":"%s","pay_html_type":%d}`,
+			checkout.PayCode, checkout.CheckoutURL, checkout.PayHTMLType))
 	a.appendOrderLogFromOrder(order, model.OrderLogTypeRecord, "更新订单状态为 pending")
 	return CreateOrderResponse{
 		OrderID:     order.ID,
 		Status:      string(order.Status),
 		CheckoutURL: order.CheckoutURL,
+		PayCode:     checkout.PayCode,
+		PayHTMLType: checkout.PayHTMLType,
 	}, nil
 }

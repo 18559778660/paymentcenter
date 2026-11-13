@@ -6,29 +6,30 @@ import (
 	"paymentcenter/internal/model"
 )
 
-// createGatewayCheckout 按平台创建支付会话。
-func (a *App) createGatewayCheckout(platform *model.Platform, account *model.ChannelAccount, order *model.Order, subject, resultURL, cancelURL string) (checkoutURL, providerRef string, err error) {
+// gatewayCheckoutResult 通道创建支付跳转的结果。
+type gatewayCheckoutResult struct {
+	CheckoutURL string
+	ProviderRef string
+	PayCode     int64
+	PayHTMLType int64
+}
+
+// createGatewayCheckout 按平台创建支付跳转。Stripe 走 B 站壳包 check.php，不再直连 Checkout。
+func (a *App) createGatewayCheckout(platform *model.Platform, account *model.ChannelAccount, siteB *model.SiteB, order *model.Order, req GatewayPayRequest) (*gatewayCheckoutResult, error) {
 	switch platform.Code {
 	case model.PlatformCodeStripe:
-		stripeKey, err := requireStripeSecretKey(account)
-		if err != nil {
-			return "", "", err
+		if _, err := requireStripeSecretKey(account); err != nil {
+			return nil, err
 		}
-		checkout, err := createStripeCheckoutSession(stripeCheckoutInput{
-			SecretKey:     stripeKey,
-			OrderID:       order.ID,
-			MerchantOrder: order.MerchantOrder,
-			Amount:        order.Amount,
-			Currency:      order.Currency,
-			Subject:       subject,
-			ResultURL:     resultURL,
-			CancelURL:     cancelURL,
-		})
-		if err != nil {
-			return "", "", fmt.Errorf("%w: %v", ErrGatewayStripeFailed, err)
+		if _, err := requireStripeWebhookSecret(account); err != nil {
+			return nil, err
 		}
-		return checkout.CheckoutURL, checkout.SessionID, nil
+		result, err := a.hopStripePayToSiteB(account, siteB, order, req)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %v", ErrGatewaySiteBFailed, err)
+		}
+		return result, nil
 	default:
-		return "", "", ErrGatewayPlatformUnsupported
+		return nil, ErrGatewayPlatformUnsupported
 	}
 }

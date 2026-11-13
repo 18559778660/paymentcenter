@@ -35,25 +35,27 @@ type gatewayPayPayload struct {
 }
 
 type gatewayOrderDetails struct {
-	BillingFirstname     string `json:"billing_firstname"`
-	BillingLastname      string `json:"billing_lastname"`
-	BillingStreetAddress string `json:"billing_street_address"`
-	BillingCity          string `json:"billing_city"`
-	BillingRegion        string `json:"billing_region"`
-	BillingPostcode      string `json:"billing_postcode"`
-	BillingCountry       string `json:"billing_country"`
-	BillingTelephone     string `json:"billing_telephone"`
-	BillingEmail         string `json:"billing_email"`
-	ShippingFirstname    string `json:"shipping_firstname"`
-	ShippingLastname     string `json:"shipping_lastname"`
+	BillingFirstname      string `json:"billing_firstname"`
+	BillingLastname       string `json:"billing_lastname"`
+	BillingStreetAddress  string `json:"billing_street_address"`
+	BillingSuburb         string `json:"billing_suburb"`
+	BillingCity           string `json:"billing_city"`
+	BillingRegion         string `json:"billing_region"`
+	BillingPostcode       string `json:"billing_postcode"`
+	BillingCountry        string `json:"billing_country"`
+	BillingTelephone      string `json:"billing_telephone"`
+	BillingEmail          string `json:"billing_email"`
+	ShippingFirstname     string `json:"shipping_firstname"`
+	ShippingLastname      string `json:"shipping_lastname"`
 	ShippingStreetAddress string `json:"shipping_street_address"`
-	ShippingCity         string `json:"shipping_city"`
-	ShippingRegion       string `json:"shipping_region"`
-	ShippingPostcode     string `json:"shipping_postcode"`
-	ShippingCountry      string `json:"shipping_country"`
-	ShippingTelephone    string `json:"shipping_telephone"`
-	ShippingEmail        string `json:"shipping_email"`
-	ClientIP             string `json:"client_ip"`
+	ShippingSuburb        string `json:"shipping_suburb"`
+	ShippingCity          string `json:"shipping_city"`
+	ShippingRegion        string `json:"shipping_region"`
+	ShippingPostcode      string `json:"shipping_postcode"`
+	ShippingCountry       string `json:"shipping_country"`
+	ShippingTelephone     string `json:"shipping_telephone"`
+	ShippingEmail         string `json:"shipping_email"`
+	ClientIP              string `json:"client_ip"`
 }
 
 type gatewayOrderGoods struct {
@@ -108,6 +110,7 @@ func NormalizeGatewayPayRequest(payload []byte) (GatewayPayRequest, error) {
 		CancelURL:     strings.TrimSpace(raw.CancelURL),
 		ResultURL:     strings.TrimSpace(raw.ResultURL),
 		SiteMode:      strings.TrimSpace(raw.SiteMode),
+		OrderDetails:  raw.OrderDetails,
 	}
 	if len(raw.OrderGoods) > 0 {
 		req.Subject = strings.TrimSpace(raw.OrderGoods[0].Name)

@@ -16,6 +16,8 @@ type CreateOrderResponse struct {
 	OrderID     string `json:"order_id"`
 	Status      string `json:"status"`
 	CheckoutURL string `json:"checkout_url"`
+	PayCode     int64  `json:"pay_code,omitempty"`
+	PayHTMLType int64  `json:"pay_html_type,omitempty"`
 }
 
 // OrderListItem 管理端订单列表项（兼容预留列 + 当前 payment_orders 字段）。

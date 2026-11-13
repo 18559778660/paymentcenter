@@ -55,7 +55,7 @@ func (g *GatewayController) Pay(c *gin.Context) {
 		writeShopyyPayError(c, err)
 		return
 	}
-	response.ShopyyPaySuccess(c, res.CheckoutURL, req.SiteMode)
+	response.ShopyyPaySuccess(c, res.CheckoutURL, res.PayCode, res.PayHTMLType)
 }
 
 // StripeWebhook Stripe 支付结果回调。
@@ -92,6 +92,8 @@ func writeShopyyPayError(c *gin.Context, err error) {
 	case errors.Is(err, service.ErrGatewayPlatformUnsupported):
 		response.ShopyyPayFail(c, "当前仅支持 Stripe 直连")
 	case errors.Is(err, service.ErrGatewayStripeFailed):
+		response.ShopyyPayFail(c, err.Error())
+	case errors.Is(err, service.ErrGatewaySiteBFailed):
 		response.ShopyyPayFail(c, err.Error())
 	default:
 		response.ShopyyPayFail(c, err.Error())
