@@ -17,9 +17,14 @@ import (
 	"paymentcenter/internal/model"
 )
 
+// 本文件把 Stripe 支付中转到 B 站壳包。
+// 支付中心建单后 POST {B域名}/{运行目录}/check.php，解析壳包返回的
+// pay_skip_url / pay_code / pay_html_type，再回给 A 站。
+// 由 createGatewayCheckout 调用，不是独立对外接口。
+
 const (
-	siteBPaymentCodeStripe = "stripe"
-	siteBOrderStatusPaying = 6
+	siteBPaymentCodeStripe = "stripe" // 壳包 AccountInfo.payment_code，对应 stripe/ 目录
+	siteBOrderStatusPaying = 6        // 壳包订单状态：支付中
 )
 
 // hopStripePayToSiteB 向 B 站壳包 POST check.php，用返回的 pay_skip_url 作为 A 站跳转地址。
@@ -103,6 +108,7 @@ func (a *App) hopStripePayToSiteB(account *model.ChannelAccount, siteB *model.Si
 	return result, nil
 }
 
+// buildSiteBCheckURL 拼壳包入口地址 https://{域名}/{运行目录}/check.php。
 func buildSiteBCheckURL(domain, runDirectory string) string {
 	domain = strings.TrimSpace(strings.ToLower(domain))
 	domain = strings.TrimPrefix(domain, "https://")
@@ -115,12 +121,14 @@ func buildSiteBCheckURL(domain, runDirectory string) string {
 	return "https://" + domain + "/" + runDirectory + "/check.php"
 }
 
+// issueSiteBAccessToken 签发 B 回调支付中心时用的 access_token。
 func (a *App) issueSiteBAccessToken(orderID string) string {
 	mac := hmac.New(sha256.New, []byte(a.authSecret))
 	mac.Write([]byte(strings.TrimSpace(orderID)))
 	return hex.EncodeToString(mac.Sum(nil))
 }
 
+// buildSiteBOrderInfo 组装壳包 get_order / getInfoUrl 所需的订单、密钥结构。
 func (a *App) buildSiteBOrderInfo(account *model.ChannelAccount, order *model.Order, req GatewayPayRequest, skSecret, wbSecret string) (map[string]interface{}, error) {
 	paymentSetting, err := json.Marshal([]map[string]string{{
 		"sk_secret": skSecret,
@@ -237,6 +245,7 @@ func (a *App) buildSiteBOrderInfo(account *model.ChannelAccount, order *model.Or
 	}, nil
 }
 
+// siteBOrderGoods 把落库商品快照转成壳包 orderGoods；没有则用订单标题凑一行。
 func siteBOrderGoods(order *model.Order, subject string) ([]map[string]interface{}, error) {
 	items := make([]orderGoodsSnapshot, 0)
 	raw := strings.TrimSpace(order.OrderGoods)
@@ -271,6 +280,7 @@ func siteBOrderGoods(order *model.Order, subject string) ([]map[string]interface
 	return out, nil
 }
 
+// postSiteBForm POST application/x-www-form-urlencoded 到壳包 check.php。
 func postSiteBForm(target string, form url.Values) ([]byte, error) {
 	req, err := http.NewRequest(http.MethodPost, target, strings.NewReader(form.Encode()))
 	if err != nil {
@@ -304,6 +314,7 @@ type siteBPayResponse struct {
 	PayHTMLType json.RawMessage `json:"pay_html_type"`
 }
 
+// parseSiteBPayResponse 解析壳包回包，取出 pay_skip_url、pay_code、pay_html_type。
 func parseSiteBPayResponse(body []byte) (*gatewayCheckoutResult, error) {
 	trimmed := strings.TrimSpace(string(body))
 	if trimmed == "" {
@@ -343,6 +354,7 @@ func parseSiteBPayResponse(body []byte) (*gatewayCheckoutResult, error) {
 	}, nil
 }
 
+// parseFlexibleInt 把壳包 JSON 里可能是数字或字符串的字段转成 int64。
 func parseFlexibleInt(raw json.RawMessage) (int64, error) {
 	if len(raw) == 0 || string(raw) == "null" {
 		return 0, nil
