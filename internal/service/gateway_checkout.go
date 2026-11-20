@@ -24,7 +24,7 @@ func (a *App) createGatewayCheckout(platform *model.Platform, account *model.Cha
 		if _, err := requireStripeWebhookSecret(account); err != nil {
 			return nil, err
 		}
-		result, err := a.hopStripePayToSiteB(account, siteB, order, req)
+		result, err := a.hopStripePayToSiteB(platform, account, siteB, order, req)
 		if err != nil {
 			return nil, fmt.Errorf("%w: %v", ErrGatewaySiteBFailed, err)
 		}

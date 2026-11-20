@@ -23,12 +23,11 @@ import (
 // 由 createGatewayCheckout 调用，不是独立对外接口。
 
 const (
-	siteBPaymentCodeStripe = "stripe" // 壳包 AccountInfo.payment_code，对应 stripe/ 目录
-	siteBOrderStatusPaying = 6        // 壳包订单状态：支付中
+	siteBOrderStatusPaying = 6 // 壳包订单状态：支付中
 )
 
 // hopStripePayToSiteB 向 B 站壳包 POST check.php，用返回的 pay_skip_url 作为 A 站跳转地址。
-func (a *App) hopStripePayToSiteB(account *model.ChannelAccount, siteB *model.SiteB, order *model.Order, req GatewayPayRequest) (*gatewayCheckoutResult, error) {
+func (a *App) hopStripePayToSiteB(platform *model.Platform, account *model.ChannelAccount, siteB *model.SiteB, order *model.Order, req GatewayPayRequest) (*gatewayCheckoutResult, error) {
 	if siteB == nil || strings.TrimSpace(siteB.Domain) == "" {
 		return nil, fmt.Errorf("通道账号未绑定可用 B 站")
 	}
@@ -37,6 +36,11 @@ func (a *App) hopStripePayToSiteB(account *model.ChannelAccount, siteB *model.Si
 	}
 	if strings.TrimSpace(a.gatewayBaseURL) == "" {
 		return nil, fmt.Errorf("未配置 GATEWAY_BASE_URL，无法把回调地址传给 B 站")
+	}
+
+	paymentCode, err := channelPaymentCode(platform)
+	if err != nil {
+		return nil, err
 	}
 
 	sk, err := requireStripeSecretKey(account)
@@ -69,7 +73,7 @@ func (a *App) hopStripePayToSiteB(account *model.ChannelAccount, siteB *model.Si
 		"order_no_type":   0,
 		"ip_whitelist":    "",
 		"payment_type_info": map[string]string{
-			"payment_code": siteBPaymentCodeStripe,
+			"payment_code": paymentCode,
 		},
 	})
 	if err != nil {
@@ -119,6 +123,18 @@ func buildSiteBCheckURL(domain, runDirectory string) string {
 		runDirectory = model.SiteBDefaultRunDirectory
 	}
 	return "https://" + domain + "/" + runDirectory + "/check.php"
+}
+
+// channelPaymentCode 用网关通道所属平台 code 作为壳包目录名（stripe / paypal）。
+func channelPaymentCode(platform *model.Platform) (string, error) {
+	if platform == nil {
+		return "", fmt.Errorf("通道平台无效")
+	}
+	code := strings.ToLower(strings.TrimSpace(platform.Code))
+	if code == "" {
+		return "", fmt.Errorf("通道平台编码为空")
+	}
+	return code, nil
 }
 
 // issueSiteBAccessToken 签发 B 回调支付中心时用的 access_token。

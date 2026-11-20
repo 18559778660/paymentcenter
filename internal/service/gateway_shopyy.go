@@ -13,25 +13,25 @@ var ErrGatewayParamInvalid = errors.New("gateway param invalid")
 
 // gatewayPayPayload A 站支付入参（当前为 Shopyy 协议，后续其它 A 站可扩展适配）。
 type gatewayPayPayload struct {
-	OrderNumber     string               `json:"orderNumber"`
-	Currency        string               `json:"currency"`
-	Amount          json.RawMessage      `json:"amount"`
-	ReturnURL       string               `json:"return_url"`
-	AsynURL         string               `json:"asyn_url"`
-	CancelURL       string               `json:"cancel_url"`
-	ResultURL       string               `json:"result_url"`
-	Domain          string               `json:"domain"`
-	OrderTime       string               `json:"order_time"`
-	Email           string               `json:"email"`
-	CustomerIp      string               `json:"customerIp"`
-	BillingName     string               `json:"billing_name"`
-	ShippingName    string               `json:"shipping_name"`
-	BillingAddress  string               `json:"billing_address"`
-	ShippingAddress string               `json:"shipping_address"`
-	FrameType       string               `json:"frame_type"`
-	SiteMode        string               `json:"site_mode"`
-	OrderDetails    gatewayOrderDetails  `json:"order_details"`
-	OrderGoods      []gatewayOrderGoods  `json:"order_goods"`
+	OrderNumber     string              `json:"orderNumber"`
+	Currency        string              `json:"currency"`
+	Amount          json.RawMessage     `json:"amount"`
+	ReturnURL       string              `json:"return_url"`
+	AsynURL         string              `json:"asyn_url"`
+	CancelURL       string              `json:"cancel_url"`
+	ResultURL       string              `json:"result_url"`
+	Domain          string              `json:"domain"`
+	OrderTime       string              `json:"order_time"`
+	Email           string              `json:"email"`
+	CustomerIp      string              `json:"customerIp"`
+	BillingName     string              `json:"billing_name"`
+	ShippingName    string              `json:"shipping_name"`
+	BillingAddress  string              `json:"billing_address"`
+	ShippingAddress string              `json:"shipping_address"`
+	FrameType       string              `json:"frame_type"`
+	SiteMode        string              `json:"site_mode"`
+	OrderDetails    gatewayOrderDetails `json:"order_details"`
+	OrderGoods      []gatewayOrderGoods `json:"order_goods"`
 }
 
 type gatewayOrderDetails struct {
