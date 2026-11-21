@@ -27,6 +27,8 @@ type Order struct {
 	Amount        int64       `gorm:"column:amount;not null" json:"amount"`                                   // 金额，最小货币单位
 	Currency      string      `gorm:"column:currency;type:varchar(16);not null" json:"currency"`              // 币种
 	ReturnURL     string      `gorm:"column:return_url;type:text;not null" json:"return_url"`                 // 同步返回地址
+	ResultURL     string      `gorm:"column:result_url;type:text" json:"result_url,omitempty"`                // A站支付成功回跳
+	CancelURL     string      `gorm:"column:cancel_url;type:text" json:"cancel_url,omitempty"`                // A站取消/失败回跳
 	NotifyURL     string      `gorm:"column:notify_url;type:text;not null" json:"notify_url"`                 // 异步通知地址
 	NotifyVerify  string      `gorm:"column:notify_verify;type:text" json:"notify_verify,omitempty"`          // Shopyy 异步 verify 快照 JSON
 	CheckoutURL   string      `gorm:"column:checkout_url;type:text" json:"checkout_url,omitempty"`            // 支付跳转地址

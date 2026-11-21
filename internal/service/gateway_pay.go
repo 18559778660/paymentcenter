@@ -140,6 +140,8 @@ func (a *App) GatewayPay(req GatewayPayRequest, q GatewayPayQuery, secretKey str
 		Amount:           req.Amount,
 		Currency:         strings.ToLower(strings.TrimSpace(req.Currency)),
 		ReturnURL:        strings.TrimSpace(req.ReturnURL),
+		ResultURL:        strings.TrimSpace(req.ResultURL),
+		CancelURL:        strings.TrimSpace(req.CancelURL),
 		NotifyURL:        strings.TrimSpace(req.NotifyURL),
 		NotifyVerify:     string(verifyJSON),
 		UsdDiff:          &usdDiff,

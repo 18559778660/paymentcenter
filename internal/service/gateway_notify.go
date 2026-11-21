@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -60,21 +61,17 @@ func (a *App) notifyMerchantSite(order *model.Order) error {
 	}
 
 	orderStatus, remark := shopyyNotifyPayload(order)
-	body, err := json.Marshal(shopyyAsyncNotifyRequest{
-		OrderNumber: strings.TrimSpace(order.MerchantOrder),
-		OrderStatus: orderStatus,
-		Remark:      remark,
-		Verify:      []string{verify},
-	})
-	if err != nil {
-		return err
-	}
+	form := url.Values{}
+	form.Set("order_number", strings.TrimSpace(order.MerchantOrder))
+	form.Set("order_status", orderStatus)
+	form.Set("remark", remark)
+	form.Set("verify", verify)
 
-	req, err := http.NewRequest(http.MethodPost, notifyURL, bytes.NewReader(body))
+	req, err := http.NewRequest(http.MethodPost, notifyURL, strings.NewReader(form.Encode()))
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=utf-8")
 
 	client := &http.Client{Timeout: 15 * time.Second}
 	resp, err := client.Do(req)
@@ -158,7 +155,7 @@ func parseShopyyNotifyResponse(body []byte) error {
 		if msg == "" {
 			msg = "unknown error"
 		}
-		return fmt.Errorf("shopyy notify rejected: %s", msg)
+		return fmt.Errorf("shopyy notify rejected: %s; body %s", msg, truncateNotifyBody(body))
 	}
 	return nil
 }

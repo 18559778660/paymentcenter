@@ -18,6 +18,7 @@ type Router struct {
 func NewRouter(cfg config.Config, app *service.App) *Router {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
+	r.RemoveExtraSlash = true
 	r.Use(gin.Logger(), gin.Recovery(), middleware.CORS())
 	_ = os.MkdirAll("./uploads", 0o755)
 	r.Static("/api/files", "./uploads")
@@ -46,6 +47,7 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 		// A 站对接网关，无需登录
 		api.GET("/gateway", gatewayController.Access)
 		api.POST("/gateway/pay", gatewayController.Pay)
+		api.POST("/gateway/orderStatusUpdate", gatewayController.OrderStatusUpdate)
 		api.POST("/webhooks/stripe", gatewayController.StripeWebhook)
 
 		api.POST("/auth/login", authController.Login)

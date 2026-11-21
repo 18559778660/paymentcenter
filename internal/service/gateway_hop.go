@@ -22,10 +22,6 @@ import (
 // pay_skip_url / pay_code / pay_html_type，再回给 A 站。
 // 由 createGatewayCheckout 调用，不是独立对外接口。
 
-const (
-	siteBOrderStatusPaying = 6 // 壳包订单状态：支付中
-)
-
 // hopStripePayToSiteB 向 B 站壳包 POST check.php，用返回的 pay_skip_url 作为 A 站跳转地址。
 func (a *App) hopStripePayToSiteB(platform *model.Platform, account *model.ChannelAccount, siteB *model.SiteB, order *model.Order, req GatewayPayRequest) (*gatewayCheckoutResult, error) {
 	if siteB == nil || strings.TrimSpace(siteB.Domain) == "" {
@@ -53,7 +49,7 @@ func (a *App) hopStripePayToSiteB(platform *model.Platform, account *model.Chann
 	}
 
 	checkURL := buildSiteBCheckURL(siteB.Domain, siteB.RunDirectory)
-	sysURL := strings.TrimRight(a.gatewayBaseURL, "/") + "/api/gateway/"
+	sysURL := strings.TrimRight(a.gatewayBaseURL, "/") + "/api/gateway"
 	getInfoURL := strings.TrimRight(a.gatewayBaseURL, "/") + "/api/gateway/getInfo"
 	accessToken := a.issueSiteBAccessToken(order.ID)
 
@@ -142,6 +138,17 @@ func (a *App) issueSiteBAccessToken(orderID string) string {
 	mac := hmac.New(sha256.New, []byte(a.authSecret))
 	mac.Write([]byte(strings.TrimSpace(orderID)))
 	return hex.EncodeToString(mac.Sum(nil))
+}
+
+// verifySiteBAccessToken 校验 B 带回的 api-token 是否与该订单签发值一致。
+func (a *App) verifySiteBAccessToken(orderID, token string) bool {
+	orderID = strings.TrimSpace(orderID)
+	token = strings.TrimSpace(token)
+	if orderID == "" || token == "" {
+		return false
+	}
+	expected := a.issueSiteBAccessToken(orderID)
+	return hmac.Equal([]byte(expected), []byte(token))
 }
 
 // buildSiteBOrderInfo 组装壳包 get_order / getInfoUrl 所需的订单、密钥结构。

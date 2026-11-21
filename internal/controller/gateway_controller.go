@@ -1,8 +1,11 @@
 package controller
 
 import (
+	"encoding/json"
 	"errors"
 	"io"
+	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -58,6 +61,31 @@ func (g *GatewayController) Pay(c *gin.Context) {
 	response.ShopyyPaySuccess(c, res.CheckoutURL, res.PayCode, res.PayHTMLType)
 }
 
+// OrderStatusUpdate B 站壳包回写支付状态。路径必须是 /api/gateway/orderStatusUpdate。
+func (g *GatewayController) OrderStatusUpdate(c *gin.Context) {
+	token := firstNonEmptyHeader(c, "Api-Token", "api-token")
+	orderJSON := strings.TrimSpace(c.PostForm("order"))
+	if orderJSON == "" {
+		payload, err := io.ReadAll(c.Request.Body)
+		if err != nil {
+			c.JSON(http.StatusOK, gin.H{"code": 0, "msg": "读取请求失败"})
+			return
+		}
+		orderJSON = parseSiteBOrderJSON(payload)
+	}
+	res, err := g.app.SiteBOrderStatusUpdate(token, orderJSON)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 0, "msg": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"code":          1,
+		"msg":           "ok",
+		"redirect_next": res.RedirectNext,
+		"status":        res.Status,
+	})
+}
+
 // StripeWebhook Stripe 支付结果回调。
 func (g *GatewayController) StripeWebhook(c *gin.Context) {
 	payload, err := io.ReadAll(c.Request.Body)
@@ -98,4 +126,35 @@ func writeShopyyPayError(c *gin.Context, err error) {
 	default:
 		response.ShopyyPayFail(c, err.Error())
 	}
+}
+
+// firstNonEmptyHeader 获取第一个非空头信息。
+func firstNonEmptyHeader(c *gin.Context, keys ...string) string {
+	for _, key := range keys {
+		if v := strings.TrimSpace(c.GetHeader(key)); v != "" {
+			return v
+		}
+	}
+	return ""
+}
+
+// parseSiteBOrderJSON 解析 SiteB 订单 JSON。
+func parseSiteBOrderJSON(payload []byte) string {
+	trimmed := strings.TrimSpace(string(payload))
+	if trimmed == "" {
+		return ""
+	}
+	var wrapper struct {
+		Order json.RawMessage `json:"order"`
+	}
+	if err := json.Unmarshal(payload, &wrapper); err == nil && len(wrapper.Order) > 0 {
+		if len(wrapper.Order) > 0 && wrapper.Order[0] == '"' {
+			var asString string
+			if err := json.Unmarshal(wrapper.Order, &asString); err == nil {
+				return strings.TrimSpace(asString)
+			}
+		}
+		return strings.TrimSpace(string(wrapper.Order))
+	}
+	return trimmed
 }
