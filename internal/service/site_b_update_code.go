@@ -128,19 +128,19 @@ func (a *App) buildSiteBShellConfig(siteB *model.SiteB, platform *model.Platform
 	callbackKeys := []string{"form_url", "jump_url", "return_url", "cancel_url", "notify_url"}
 	callbackPads := []string{"/form_page", "/jump_page", "/return_page", "/cancel_page", "/notify_page"}
 	config := map[string]string{
-		"dir":             dir,
-		"channel":         strings.ToLower(strings.TrimSpace(platform.Code)),
-		"invoice":         "invoice",
-		"page":            "page",
-		"order_no":        "order_no",
-		"order_id":        "order_id",
-		"webhook_url":     webhookURL,
-		"invoice_prefix":  "ORD",
-		"invoice_length":  "15",
-		"invoice_tag":     "5",
-		"type":            "0",
-		"meta_data":       "",
-		"refund_url":      "",
+		"dir":            dir,
+		"channel":        strings.ToLower(strings.TrimSpace(platform.Code)),
+		"invoice":        "invoice",
+		"page":           "page",
+		"order_no":       "order_no",
+		"order_id":       "order_id",
+		"webhook_url":    webhookURL,
+		"invoice_prefix": "ORD",
+		"invoice_length": "15",
+		"invoice_tag":    "5",
+		"type":           "0",
+		"meta_data":      "",
+		"refund_url":     "",
 	}
 	for i, key := range callbackKeys {
 		value, word, err := a.pickStripeWordBank(model.StripeWordBankConfigCallback, used, callbackPads[i])

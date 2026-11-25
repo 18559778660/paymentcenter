@@ -116,7 +116,7 @@ func (a *App) applySiteBOrderStatus(order *model.Order, siteBStatus int64, paylo
 		if txn != "" {
 			order.ProviderRef = txn
 		}
-		a.appendOrderLogFromOrder(order, model.OrderLogTypeRecord, "B站回写支付中")
+		a.appendOrderLogFromOrder(order, model.OrderLogTypeRecord, "B站回写支付中，"+siteBWritebackLogDetail(comment))
 		return true, false, nil
 
 	case siteBOrderStatusPaid:
@@ -127,15 +127,17 @@ func (a *App) applySiteBOrderStatus(order *model.Order, siteBStatus int64, paylo
 			changed = true
 		}
 		if alreadyPaid {
+			a.appendOrderLogFromOrder(order, model.OrderLogTypeRecord, "B站重复回写支付成功，忽略，"+siteBWritebackLogDetail(comment))
 			return changed, false, nil
 		}
 		order.Status = model.OrderStatusPaid
 		order.ErrorMessage = ""
-		a.appendOrderLogFromOrder(order, model.OrderLogTypeRecord, "B站回写支付成功")
+		a.appendOrderLogFromOrder(order, model.OrderLogTypeRecord, "B站回写支付成功，"+siteBWritebackLogDetail(comment))
 		return true, true, nil
 
 	case siteBOrderStatusFailed:
 		if order.Status == model.OrderStatusPaid {
+			a.appendOrderLogFromOrder(order, model.OrderLogTypeRecord, "B站回写失败但订单已支付，忽略，"+siteBWritebackLogDetail(comment))
 			return false, false, nil
 		}
 		if order.Status == model.OrderStatusFailed {
@@ -146,7 +148,7 @@ func (a *App) applySiteBOrderStatus(order *model.Order, siteBStatus int64, paylo
 		if txn != "" {
 			order.ProviderRef = firstNonEmpty(order.ProviderRef, txn)
 		}
-		a.appendOrderLogFromOrder(order, model.OrderLogTypeFailRecord, "B站回写支付失败: "+order.ErrorMessage)
+		a.appendOrderLogFromOrder(order, model.OrderLogTypeFailRecord, "B站回写支付失败: "+order.ErrorMessage+"，"+siteBWritebackLogDetail(comment))
 		return true, true, nil
 
 	case siteBOrderStatusCancel:
@@ -161,16 +163,43 @@ func (a *App) applySiteBOrderStatus(order *model.Order, siteBStatus int64, paylo
 		if txn != "" {
 			order.ProviderRef = firstNonEmpty(order.ProviderRef, txn)
 		}
-		a.appendOrderLogFromOrder(order, model.OrderLogTypeFailRecord, "B站回写支付取消")
+		a.appendOrderLogFromOrder(order, model.OrderLogTypeFailRecord, "B站回写支付取消，"+siteBWritebackLogDetail(comment))
 		return true, true, nil
 
 	case siteBOrderStatusRefund, siteBOrderStatusPartial:
-		a.appendOrderLogFromOrder(order, model.OrderLogTypeRecord, "B站回写退款状态，当前版本暂不处理")
+		a.appendOrderLogFromOrder(order, model.OrderLogTypeRecord, "B站回写退款状态，当前版本暂不处理，"+siteBWritebackLogDetail(comment))
 		return false, false, nil
 
 	default:
 		return false, false, fmt.Errorf("%w: 未知状态 %d", ErrGatewaySiteBOrderInvalid, siteBStatus)
 	}
+}
+
+// siteBWritebackSource 根据壳包 pay_msg 区分回写入口。
+// notify.php（Stripe webhook）comment 是 "notify:..."，return.php 是 "return completed..."。
+func siteBWritebackSource(payMsg string) string {
+	msg := strings.ToLower(strings.TrimSpace(payMsg))
+	switch {
+	case strings.HasPrefix(msg, "notify:"):
+		return "webhook"
+	case strings.HasPrefix(msg, "return"):
+		return "返回页"
+	case strings.Contains(msg, "payment redirect"):
+		return "跳转"
+	case msg == "cancel":
+		return "取消页"
+	default:
+		return "未知"
+	}
+}
+
+func siteBWritebackLogDetail(payMsg string) string {
+	src := siteBWritebackSource(payMsg)
+	msg := strings.TrimSpace(payMsg)
+	if msg == "" {
+		return "来源:" + src
+	}
+	return "来源:" + src + "，" + msg
 }
 
 // siteBRedirectNext 根据 B 站订单状态返回 redirect_next。
