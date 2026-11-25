@@ -14,7 +14,8 @@ type gatewayCheckoutResult struct {
 	PayHTMLType int64
 }
 
-// createGatewayCheckout 按平台创建支付跳转。Stripe 走 B 站壳包 check.php，不再直连 Checkout。
+// createGatewayCheckout 按平台创建支付跳转。
+// Stripe 走路2：B 站壳包 check.php。路1 直连 createStripeCheckoutSession 已不再调用。
 func (a *App) createGatewayCheckout(platform *model.Platform, account *model.ChannelAccount, siteB *model.SiteB, order *model.Order, req GatewayPayRequest) (*gatewayCheckoutResult, error) {
 	switch platform.Code {
 	case model.PlatformCodeStripe:

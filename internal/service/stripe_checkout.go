@@ -11,6 +11,10 @@ import (
 	"github.com/stripe/stripe-go/v82/paymentintent"
 )
 
+// 本文件是路1遗留：支付中心用 SK 直连创建 Stripe Checkout、再查手续费。
+// createStripeCheckoutSession 已无调用方（建单改走 B 站 hop）。
+// fetchStripeCheckoutFee 只被 gateway_webhook.go 的路1回调用。
+
 // stripeCheckoutInput Stripe Checkout 输入参数。
 type stripeCheckoutInput struct {
 	SecretKey     string
@@ -29,7 +33,7 @@ type stripeCheckoutResult struct {
 	CheckoutURL string
 }
 
-// createStripeCheckoutSession 创建 Stripe Checkout 会话。
+// createStripeCheckoutSession 路1遗留：支付中心直连创建 Checkout 会话。现已无调用。
 func createStripeCheckoutSession(in stripeCheckoutInput) (*stripeCheckoutResult, error) {
 	secretKey := strings.TrimSpace(in.SecretKey)
 	if secretKey == "" {
@@ -88,8 +92,7 @@ func createStripeCheckoutSession(in stripeCheckoutInput) (*stripeCheckoutResult,
 	}, nil
 }
 
-// fetchStripeCheckoutFee 通过 Checkout Session → PaymentIntent → Charge → BalanceTransaction 读取手续费。
-// 深 expand 经常只带回 ID、fee=0，因此改为逐步拉取。
+// fetchStripeCheckoutFee 路1遗留：Checkout Session → PaymentIntent → Charge 读手续费。
 func fetchStripeCheckoutFee(secretKey, sessionID string) (int64, error) {
 	secretKey = strings.TrimSpace(secretKey)
 	sessionID = strings.TrimSpace(sessionID)

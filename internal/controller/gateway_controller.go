@@ -86,7 +86,8 @@ func (g *GatewayController) OrderStatusUpdate(c *gin.Context) {
 	})
 }
 
-// StripeWebhook Stripe 支付结果回调。
+// StripeWebhook 路1遗留：接收 Stripe 打到支付中心的 webhook。
+// 路2 付款结果由 B 站调 OrderStatusUpdate，不会再走这里。
 func (g *GatewayController) StripeWebhook(c *gin.Context) {
 	payload, err := io.ReadAll(c.Request.Body)
 	if err != nil {
@@ -118,7 +119,7 @@ func writeShopyyPayError(c *gin.Context, err error) {
 	case errors.Is(err, service.ErrGatewayAccountWebhookSecretMissing):
 		response.ShopyyPayFail(c, "通道账号未配置 Webhook 密钥")
 	case errors.Is(err, service.ErrGatewayPlatformUnsupported):
-		response.ShopyyPayFail(c, "当前仅支持 Stripe 直连")
+		response.ShopyyPayFail(c, "当前仅支持 Stripe 直连") // 路1遗留文案，现实际为 Stripe 经 B 站中转
 	case errors.Is(err, service.ErrGatewayStripeFailed):
 		response.ShopyyPayFail(c, err.Error())
 	case errors.Is(err, service.ErrGatewaySiteBFailed):

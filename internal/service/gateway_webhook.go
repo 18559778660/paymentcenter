@@ -11,6 +11,9 @@ import (
 	"paymentcenter/internal/model"
 )
 
+// 本文件是路1遗留：支付中心自己收 Stripe Checkout webhook、标已支付、查手续费。
+// 路2 已改为 Stripe→B站伪装路径→orderStatusUpdate，下面函数当前付款链路不会被调用。
+
 // stripeCheckoutSessionEvent Stripe Checkout 会话事件。
 type stripeCheckoutSessionEvent struct {
 	ClientReferenceID string            `json:"client_reference_id"`
@@ -52,7 +55,7 @@ func peekStripeWebhookOrderID(payload []byte) (string, error) {
 	return orderID, nil
 }
 
-// HandleStripeWebhook 处理 Stripe 回调，按订单关联的通道账号 web_secret 验签。
+// HandleStripeWebhook 路1遗留：用通道账号 web_secret 验签 Stripe 直连回调。
 func (a *App) HandleStripeWebhook(payload []byte, signature string) error {
 	orderID, err := peekStripeWebhookOrderID(payload)
 	if err != nil {
@@ -102,7 +105,7 @@ func (a *App) HandleStripeWebhook(payload []byte, signature string) error {
 	}
 }
 
-// applyStripeCheckoutPaid 将会话标记为已支付、回填 Stripe 手续费并通知商户站。
+// applyStripeCheckoutPaid 路1遗留：Checkout 已支付后改订单、补手续费、通知 A 站。
 func (a *App) applyStripeCheckoutPaid(order *model.Order, account *model.ChannelAccount, raw json.RawMessage) error {
 	var sess stripe.CheckoutSession
 	if err := json.Unmarshal(raw, &sess); err != nil {
@@ -148,7 +151,7 @@ func (a *App) applyStripeCheckoutPaid(order *model.Order, account *model.Channel
 	return nil
 }
 
-// lookupStripeCheckoutFee 同步快速查询一次手续费；查不到返回 0，由异步补查承接。
+// lookupStripeCheckoutFee 路1遗留：用 SK 向 Stripe 查 Checkout 手续费。
 func (a *App) lookupStripeCheckoutFee(account *model.ChannelAccount, sessionID string) int64 {
 	secretKey, err := requireStripeSecretKey(account)
 	if err != nil {
@@ -161,7 +164,7 @@ func (a *App) lookupStripeCheckoutFee(account *model.ChannelAccount, sessionID s
 	return fee
 }
 
-// scheduleStripeFeeBackfill 支付成功后若手续费尚未就绪，后台延迟二次/三次补查并落库。
+// scheduleStripeFeeBackfill 路1遗留：手续费未就绪时后台延迟补查。
 func (a *App) scheduleStripeFeeBackfill(orderID string, accountID uint, sessionID string) {
 	orderID = strings.TrimSpace(orderID)
 	sessionID = strings.TrimSpace(sessionID)
@@ -196,7 +199,7 @@ func (a *App) scheduleStripeFeeBackfill(orderID string, accountID uint, sessionI
 	}()
 }
 
-// applyStripeCheckoutTerminal 将会话标记为终态（取消/失败）并通知商户站。
+// applyStripeCheckoutTerminal 路1遗留：Checkout 取消/失败后改订单并通知 A 站。
 func (a *App) applyStripeCheckoutTerminal(order *model.Order, raw json.RawMessage, status model.OrderStatus, message string) error {
 	var sess stripe.CheckoutSession
 	if err := json.Unmarshal(raw, &sess); err != nil {

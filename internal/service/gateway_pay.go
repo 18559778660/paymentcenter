@@ -19,7 +19,7 @@ var (
 	ErrGatewayChannelDisabled             = errors.New("gateway channel disabled")
 	ErrGatewayAccountUnavailable          = errors.New("gateway account unavailable")
 	ErrGatewayPlatformUnsupported         = errors.New("gateway platform unsupported")
-	ErrGatewayStripeFailed                = errors.New("gateway stripe failed")
+	ErrGatewayStripeFailed                = errors.New("gateway stripe failed") // 路1遗留：直连 Checkout 失败；路2 走 ErrGatewaySiteBFailed
 	ErrGatewayAccountStripeKeyMissing     = errors.New("gateway account stripe key missing")
 	ErrGatewayAccountWebhookSecretMissing = errors.New("gateway account webhook secret missing")
 	ErrGatewaySiteBFailed                 = errors.New("gateway site b failed")
@@ -99,7 +99,7 @@ func (a *App) GatewayPay(req GatewayPayRequest, q GatewayPayQuery, secretKey str
 		} else if errors.Is(err, ErrGatewayAccountWebhookSecretMissing) {
 			msg = "通道账号未配置 Webhook 密钥"
 		} else if errors.Is(err, ErrGatewayPlatformUnsupported) {
-			msg = "当前仅支持 Stripe 直连"
+			msg = "当前仅支持 Stripe 直连" // 路1遗留文案
 		}
 		a.appendOrderLog("", merchant.ID, merchantOrder, model.OrderLogTypeFailLog, msg)
 		return CreateOrderResponse{}, err

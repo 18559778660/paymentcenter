@@ -48,6 +48,7 @@ func NewRouter(cfg config.Config, app *service.App) *Router {
 		api.GET("/gateway", gatewayController.Access)
 		api.POST("/gateway/pay", gatewayController.Pay)
 		api.POST("/gateway/orderStatusUpdate", gatewayController.OrderStatusUpdate)
+		// 路1遗留：Stripe 直连支付中心时的回调入口。路2 已改为 Stripe→B站/hook→orderStatusUpdate，当前付款链路不用这条。
 		api.POST("/webhooks/stripe", gatewayController.StripeWebhook)
 
 		api.POST("/auth/login", authController.Login)
