@@ -122,6 +122,21 @@ func (m *SiteBController) Gateways(c *gin.Context) {
 	response.Success(c, list)
 }
 
+// UpdateCode 批量运行壳包部署并创建 Stripe webhook。
+func (m *SiteBController) UpdateCode(c *gin.Context) {
+	var req service.UpdateSiteBCodeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, "参数错误")
+		return
+	}
+	list, err := m.app.UpdateSiteBCode(req, operatorName(c))
+	if err != nil {
+		writeSiteBError(c, err)
+		return
+	}
+	response.SuccessMsg(c, list, "updated")
+}
+
 func parseSiteBID(c *gin.Context) (uint, error) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil || id == 0 {
@@ -142,6 +157,8 @@ func writeSiteBError(c *gin.Context, err error) {
 		response.Fail(c, "请选择有效通道平台")
 	case errors.Is(err, service.ErrSiteBFrameworkInvalid):
 		response.Fail(c, "请选择有效框架")
+	case errors.Is(err, service.ErrSiteBUpdateCodeIDsInvalid):
+		response.Fail(c, "请先勾选要更新代码的记录")
 	default:
 		response.Fail(c, err.Error())
 	}
