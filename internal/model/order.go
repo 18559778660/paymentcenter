@@ -15,8 +15,12 @@ const (
 
 // Order 模型层：支付中心订单，对应 payment_orders 表。
 type Order struct {
-	ID            string      `gorm:"column:id;type:varchar(64);primaryKey" json:"id"`                        // 支付中心订单号
-	MerchantOrder string      `gorm:"column:merchant_order;type:varchar(128);not null;index" json:"merchant_order"` // A站订单号
+	// ID 支付中心单号（pc_ 前缀），表主键。下单、查单、回写、webhook 都用这个，不是列表里的数字 ID。
+	ID            string      `gorm:"column:id;type:varchar(64);primaryKey" json:"id"`
+	// SN 列表「ID」列用的数字自增序号，仅展示，不参与业务。由 SQL 加列，避免 GORM 当成主键。
+	SN            uint        `gorm:"column:sn;-:migration" json:"sn"`
+	// MerchantOrder 商家/A站订单号，列表「订单号」列。和 id（pc_）不是同一个号。
+	MerchantOrder string      `gorm:"column:merchant_order;type:varchar(128);not null;index" json:"merchant_order"`
 	MerchantSite     string      `gorm:"column:merchant_site;type:varchar(255);not null" json:"merchant_site"`   // A站站点标识
 	MerchantID       uint        `gorm:"column:merchant_id;not null;default:0;index" json:"merchant_id"`         // 商户ID
 	Channel          string      `gorm:"column:channel;type:varchar(64);not null" json:"channel"`                // 通道代码

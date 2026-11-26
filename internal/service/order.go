@@ -22,10 +22,11 @@ type CreateOrderResponse struct {
 
 // OrderListItem 管理端订单列表项（兼容预留列 + 当前 payment_orders 字段）。
 type OrderListItem struct {
-	ID               string `json:"id"`
+	ID               string `json:"id"`            // 支付中心单号 pc_…，业务主键，列表不单独展示
+	SN               uint   `json:"sn"`            // 列表「ID」：数字自增序号
 	MerchantID       uint   `json:"merchantId"`
 	MerchantName     string `json:"merchantName"`
-	MerchantOrder    string `json:"merchantOrder"`
+	MerchantOrder    string `json:"merchantOrder"` // 列表「订单号」：商家/A站单号，不是 pc_
 	MerchantSite     string `json:"merchantSite"`
 	ProviderRef      string `json:"providerRef"`
 	SiteBID          uint   `json:"siteBId"`
@@ -402,6 +403,7 @@ func toOrderListItem(
 	}
 	return OrderListItem{
 		ID:               order.ID,
+		SN:               order.SN,
 		MerchantID:       order.MerchantID,
 		MerchantName:     merchantName,
 		MerchantOrder:    order.MerchantOrder,

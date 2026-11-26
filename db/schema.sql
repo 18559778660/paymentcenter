@@ -5,8 +5,9 @@ CREATE DATABASE IF NOT EXISTS payment_center
 USE payment_center;
 
 CREATE TABLE IF NOT EXISTS payment_orders (
-  id VARCHAR(64) NOT NULL COMMENT '支付中心订单号',
-  merchant_order VARCHAR(128) NOT NULL COMMENT 'A站订单号',
+  id VARCHAR(64) NOT NULL COMMENT '支付中心单号（pc_前缀），表主键，下单/查单/回写用；不是列表数字ID',
+  sn BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE COMMENT '列表展示用数字自增序号，仅展示不参与业务',
+  merchant_order VARCHAR(128) NOT NULL COMMENT '商家/A站订单号，列表「订单号」列；和id(pc_)不是同一个号',
   merchant_site VARCHAR(255) NOT NULL COMMENT 'A站域名或站点标识',
   merchant_id BIGINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '商户ID',
   channel VARCHAR(64) NOT NULL COMMENT '通道代码，例如 win_stripe',

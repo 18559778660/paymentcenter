@@ -21,6 +21,9 @@ func NewMySQLStore(dsn string) (*MySQLStore, error) {
 	if err != nil {
 		return nil, err
 	}
+	if err := ensurePaymentOrderSNColumn(db); err != nil {
+		return nil, err
+	}
 	if err := db.AutoMigrate(
 		&model.Order{},
 		&model.OrderLog{},
@@ -49,6 +52,23 @@ func NewMySQLStore(dsn string) (*MySQLStore, error) {
 	return &MySQLStore{db: db}, nil
 }
 
+func ensurePaymentOrderSNColumn(db *gorm.DB) error {
+	var n int64
+	if err := db.Raw(`
+		SELECT COUNT(*) FROM information_schema.COLUMNS
+		WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'payment_orders' AND COLUMN_NAME = 'sn'
+	`).Scan(&n).Error; err != nil {
+		return err
+	}
+	if n > 0 {
+		return nil
+	}
+	return db.Exec(`
+		ALTER TABLE payment_orders
+		ADD COLUMN sn BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE COMMENT '内部自增序号' AFTER id
+	`).Error
+}
+
 // Close 关闭数据库连接。
 func (s *MySQLStore) Close() error {
 	sqlDB, err := s.db.DB()
@@ -60,6 +80,9 @@ func (s *MySQLStore) Close() error {
 
 // SaveOrder 新增或更新订单。
 func (s *MySQLStore) SaveOrder(order *model.Order) error {
+	if order != nil && order.SN == 0 {
+		return s.db.Omit("sn").Save(order).Error
+	}
 	return s.db.Save(order).Error
 }
 
