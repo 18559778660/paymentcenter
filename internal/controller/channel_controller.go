@@ -2,7 +2,6 @@ package controller
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -198,8 +197,8 @@ func (m *ChannelController) DownloadPackage(c *gin.Context) {
 		writeChannelPackageError(c, err)
 		return
 	}
-	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", downloadName))
-	c.File(absPath)
+	c.Header("X-Channel-Package-Name", downloadName)
+	c.FileAttachment(absPath, downloadName)
 }
 
 func writeChannelPackageError(c *gin.Context, err error) {

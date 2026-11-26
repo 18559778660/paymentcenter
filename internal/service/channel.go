@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"paymentcenter/internal/model"
@@ -408,14 +409,19 @@ func (a *App) toChannelListItem(item model.Channel, platformMap map[uint]model.P
 		platformCode = platform.Code
 		platformName = platform.Name
 	}
+	_, packageName, packageOK := lookupChannelPackage(item, platformCode)
+	packageURL := ""
+	if packageOK {
+		packageURL = fmt.Sprintf("/api/channels/%d/package", item.ID)
+	}
 	return ChannelListItem{
 		ID:                item.ID,
 		Name:              item.Name,
 		PlatformID:        item.PlatformID,
 		Platform:          platformCode,
 		PlatformName:      platformName,
-		PackageName:       packageDisplayName(item.PackageName),
-		PackageURL:        a.BuildPackageURL(item.ID, item.PackageName),
+		PackageName:       packageName,
+		PackageURL:        packageURL,
 		TotalAmount:       0,
 		Balance:           0,
 		DailyOrderLimit:   item.DailyOrderLimit,

@@ -6,14 +6,20 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strings"
+
+	"paymentcenter/internal/model"
 )
 
 var (
 	ErrChannelPackageNotFound = errors.New("channel package not found")
 )
 
-const channelPackageRoot = "channels"
+const (
+	channelPackageRoot         = "channels"
+	channelPackageDefaultsRoot = "resources/channel-packages"
+)
 
 // BuildPackageURL 生成压缩包下载地址（走鉴权接口）。
 func (a *App) BuildPackageURL(channelID uint, packagePath string) string {
@@ -49,6 +55,7 @@ func (a *App) SetChannelPackage(id uint, relativePath, operator string) (*Channe
 }
 
 // ChannelPackageFile 返回通道压缩包绝对路径与下载文件名。
+// 已上传文件不存在时，按平台回落到 resources/channel-packages/{stripe|paypal}/ 下的默认包。
 func (a *App) ChannelPackageFile(id uint) (absPath, downloadName string, err error) {
 	item, err := a.store.GetChannelByID(id)
 	if err != nil {
@@ -57,18 +64,15 @@ func (a *App) ChannelPackageFile(id uint) (absPath, downloadName string, err err
 		}
 		return "", "", err
 	}
-	relativePath := strings.TrimSpace(item.PackageName)
-	if relativePath == "" {
+	platformCode := ""
+	if platform, platErr := a.getPlatformByID(item.PlatformID); platErr == nil && platform != nil {
+		platformCode = platform.Code
+	}
+	absPath, downloadName, ok := lookupChannelPackage(*item, platformCode)
+	if !ok {
 		return "", "", ErrChannelPackageNotFound
 	}
-	absPath = channelPackageAbsPath(relativePath)
-	if _, statErr := os.Stat(absPath); statErr != nil {
-		if os.IsNotExist(statErr) {
-			return "", "", ErrChannelPackageNotFound
-		}
-		return "", "", statErr
-	}
-	return absPath, path.Base(relativePath), nil
+	return absPath, downloadName, nil
 }
 
 // BuildChannelPackageRelativePath 生成压缩包存储相对路径。
@@ -119,4 +123,45 @@ func packageDisplayName(relativePath string) string {
 		return ""
 	}
 	return name
+}
+
+// lookupChannelPackage 查找通道压缩包。
+func lookupChannelPackage(item model.Channel, platformCode string) (absPath, downloadName string, ok bool) {
+	relativePath := strings.TrimSpace(item.PackageName)
+	if relativePath != "" {
+		absPath = channelPackageAbsPath(relativePath)
+		if _, err := os.Stat(absPath); err == nil {
+			return absPath, packageDisplayName(relativePath), true
+		}
+	}
+	return lookupDefaultChannelPackage(platformCode)
+}
+
+// lookupDefaultChannelPackage 查找默认通道压缩包。
+func lookupDefaultChannelPackage(platformCode string) (absPath, downloadName string, ok bool) {
+	code := strings.ToLower(strings.TrimSpace(platformCode))
+	if code == "" {
+		return "", "", false
+	}
+	dir := filepath.Join("resources", "channel-packages", code)
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return "", "", false
+	}
+	names := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		ext := strings.ToLower(filepath.Ext(entry.Name()))
+		if ext != ".zip" && ext != ".rar" && ext != ".7z" {
+			continue
+		}
+		names = append(names, entry.Name())
+	}
+	if len(names) == 0 {
+		return "", "", false
+	}
+	sort.Strings(names)
+	return filepath.Join(dir, names[0]), names[0], true
 }
